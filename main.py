@@ -77,7 +77,6 @@ def start(update, context):
     update.message.reply_text('Привет! Я твой помощник в изучении немецкого языка! Напиши какое-нибудь слово на немецком языке, а я дам тебе его значение и напомню, когда ты начнешь его забывать!')
     set_timer(update, context)
     chat_id = update.message.chat_id
-    open('users/{}.words'.format(chat_id), 'a').close()
 
 
 def set_timer(update, context):
