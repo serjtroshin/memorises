@@ -24,9 +24,10 @@ from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters)
 from FlashCard import FlashCard
 from Timer import Activity
 from YandexAPI import YandexAPI
+from Config import Config
 
-with open("config.json") as f:
-    TOKEN = json.load(f)["keys"]["telegramkey"]
+
+TOKEN = Config.get_config()["keys"]["telegramkey"]
 
 REQUEST_KWARGS = None  # if you want to use proxy
 
