@@ -2,13 +2,13 @@ import json
 import requests
 from urllib.parse import quote
 import pprint
+from Config import Config
 
 class YandexAPI:
     def __init__(self, src="de", tgt="ru"):
-        with open("config.json") as f:
-            config = json.load(f)
-            keyDict = config["keys"]["YandexDictionary"]
-            keyTranslate = config["keys"]["YandexTranslate"]
+        config = Config.get_config()
+        keyDict = config["keys"]["YandexDictionary"]
+        keyTranslate = config["keys"]["YandexTranslate"]
 
         self.urlDict = "https://dictionary.yandex.net/api/v1/dicservice.json/lookup?key={}&lang={}-{}&text=".format(keyDict, src, tgt)
         self.urlTranslate = "https://translate.yandex.net/api/v1.5/tr.json/translate?key={}&lang={}-{}&text=".format(keyTranslate, src, tgt)
