@@ -129,7 +129,7 @@ def create_database(recreate=False):
                     references {CardsDB.db_name}({CardsDB.card_id})
                 """)
                 cur.execute(f"""
-                    alter table {UsersDB.db_name} drop constraint
+                    alter table {CardsDB.db_name} drop constraint
                     if exists cards_phrases_fkey
                 """)
                 cur.execute(f"""
