@@ -2,6 +2,8 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import json
 import logging
+from Config import Config
+import os
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -9,25 +11,30 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
-    _config = json.load(open("config.json", "r"))["database"]
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url is None:
+        _config = Config.get_config()["database"]
 
-    dbname = _config["dbname"]
-    initial_dbname = _config["initial_dbname"]
-    user = _config["user"]
-    password = _config["password"]
-    host = _config["host"]
-    port = _config["port"]
-    timeout = _config["timeout"]
+        dbname = _config["dbname"]
+        initial_dbname = _config["initial_dbname"]
+        user = _config["user"]
+        password = _config["password"]
+        host = _config["host"]
+        port = _config["port"]
+        timeout = _config["timeout"]
 
 
 def get_connection():
-    conn = psycopg2.connect(
-        dbname=Config.dbname,
-        user=Config.user,
-        password=Config.password,
-        host=Config.host,
-        port=Config.port
-    )
+    if Config.database_url is not None:
+        conn = psycopg2.connect(Config.database_url, sslmode='require')
+    else:
+        conn = psycopg2.connect(
+            dbname=Config.dbname,
+            user=Config.user,
+            password=Config.password,
+            host=Config.host,
+            port=Config.port
+        )
     return conn
 
 
@@ -58,29 +65,30 @@ def create_database(recreate=False):
     if recreate:
         drop_database()
 
-    conn = psycopg2.connect(
-        dbname=Config.initial_dbname,
-        user=Config.user,
-        password=Config.password,
-        host=Config.host,
-        port=Config.port,
-    )
+    exists = False
 
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    if Config.database_url is None:
+        conn = psycopg2.connect(
+            dbname=Config.initial_dbname,
+            user=Config.user,
+            password=Config.password,
+            host=Config.host,
+            port=Config.port,
+        )
 
-    exists = True
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
-    with conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "select 1 from pg_catalog.pg_database "
-                f"where datname = '{Config.dbname}'"
-            )
-            exists = cur.fetchone()
-            if not exists:
-                logger.info(f"Creating database {Config.dbname}")
-                cur.execute(f"create database {Config.dbname}")
-    conn.close()
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "select 1 from pg_catalog.pg_database "
+                    f"where datname = '{Config.dbname}'"
+                )
+                exists = cur.fetchone()
+                if not exists:
+                    logger.info(f"Creating database {Config.dbname}")
+                    cur.execute(f"create database {Config.dbname}")
+        conn.close()
 
     if not exists:
         with get_connection() as conn:
@@ -112,9 +120,17 @@ def create_database(recreate=False):
 
                 # Constraints
                 cur.execute(f"""
+                    alter table {UsersDB.db_name} drop constraint
+                    if exists users_cards_fkey
+                """)
+                cur.execute(f"""
                     alter table {UsersDB.db_name} add constraint
                     users_cards_fkey foreign key ({UsersDB.card_id})
                     references {CardsDB.db_name}({CardsDB.card_id})
+                """)
+                cur.execute(f"""
+                    alter table {UsersDB.db_name} drop constraint
+                    if exists cards_phrases_fkey
                 """)
                 cur.execute(f"""
                     alter table {CardsDB.db_name} add constraint
@@ -124,7 +140,7 @@ def create_database(recreate=False):
 
                 # Indexes
                 cur.execute(f"""
-                    create index user_chat_id_idx on
+                    create index if not exists user_chat_id_idx on
                     {UsersDB.db_name}({UsersDB.chat_id})
                 """)
 
@@ -149,4 +165,4 @@ def drop_database():
 
 
 if __name__ == "__main__":
-    create_database(recreate=True)
+    create_database(recreate=False)
