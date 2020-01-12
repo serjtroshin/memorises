@@ -53,17 +53,23 @@ def add_flash_card(update, context):
         update.message.reply_text("К сожалению, слово {} мне неизвестно :(".format(word))
         return
     else:
-        meanings = meanings[0]  # TODO
-    flash_cards[word] = FlashCard(word=meanings["orig"],
-                                  translation=meanings["target"],
-                                  examples=meanings["examples"],
-                                  chat_id=chat_id)
-    print(flash_cards[word])
-    flash_card = flash_cards[word]
-    activities.push(Activity(flash_card, flash_card.time_next + flash_card.time_added))
-    update.message.reply_text("Новая карточка!\n" + str(flash_cards[word]))
-    with open("users/{}.words".format(chat_id), "a") as f:
-        f.write(word + ', ' + str(flash_cards[word].time_added) + '\n')
+        meanings = meanings[0]  # TODO let user select meaning
+
+    flash_card = FlashCard(word=meanings["orig"],
+                           translation=meanings["target"],
+                           examples=meanings["examples"],
+                           chat_id=chat_id)
+    logger.info(f"Adding new card: {flash_card}")
+    flash_card.add_to_database()
+
+    saved_flash_card = flash_card.get_from_database()
+
+    print("****************REPEAT TIME", saved_flash_card.time_next_delta + saved_flash_card.time_added.timestamp())
+
+    activities.push(Activity(flash_card, saved_flash_card.time_next_delta + saved_flash_card.time_added.timestamp()))
+
+    update.message.reply_text("Новая карточка!\n" + str(flash_card))
+
 
 def start(update, context):
     update.message.reply_text('Привет! Я твой помощник в изучении немецкого языка! Напиши какое-нибудь слово на немецком языке, а я дам тебе его значение и напомню, когда ты начнешь его забывать!')
@@ -71,9 +77,6 @@ def start(update, context):
     chat_id = update.message.chat_id
     open('users/{}.words'.format(chat_id), 'a').close()
 
-# def show_cards(flash_cards):
-#     for card in flash_cards:
-#         print(card.word, time() - card.time_added)
 
 def set_timer(update, context):
     """Add a job to the queue."""
@@ -93,8 +96,8 @@ def check_for_updates(context):
         act = activities.pop()
         acts.append(act)
     for act in acts:
-        act.flash_card.update()
-        act.time += act.flash_card.time_next
+        time_next = act.flash_card.update()
+        act.time += time_next
         activities.push(act)
     for act in acts:
         context.bot.send_message(act.flash_card.chat_id, text="Повторите\n" + str(act.flash_card))
@@ -106,7 +109,7 @@ def error(update, context):
 
 
 def main():
-    updater = Updater(TOKEN, use_context=True)
+    updater = Updater(TOKEN, request_kwargs=REQUEST_KWARGS, use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -120,6 +123,8 @@ def main():
 
     # Start the Bot
     updater.start_polling()
+
+    logger.info("Bot started")
 
     # Block until you press Ctrl-C or the process receives SIGINT, SIGTERM or
     # SIGABRT. This should be used most of the time, since start_polling() is
