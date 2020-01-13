@@ -14,15 +14,20 @@ class FlashCard:
         self.card_id = None
 
     def __str__(self):
-        message = "-----------------\n"
-        message += "{} | {}".format(self.word, self.translation)
-        message += "\n".join(list(
+        definitions_strings = "\n".join(list(
                       map(str, list(filter(lambda x: x is not None, [
                            self.definition]
-                    ))))) + "\n"
+                    )))))
+        examples_strings = "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples]) if not self.examples is None else ""
+        dash = "–" * max(len(self.word) + 5 + len(self.translation),
+                         max(map(len, definitions_strings.split('\n') + [""])),
+                         max(map(len, examples_strings.split('\n') + [""]))) + '\n'
+        message = dash + '\n'
+        message += "{} | {}".format(self.word, self.translation) + '\n'
+        message += definitions_strings + "\n"
         if not self.examples is None:
-            message += "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples])
-        message += "-----------------\n"
+            message += examples_strings
+        message += dash + '\n'
         # message = self.word + "\n" + collinsAPI.get_url(self.word) + "\n"
         return message
 
@@ -87,11 +92,9 @@ class FlashCard:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(f"""
-                                    select * from (
-                                        (select {CardsDB.card_id} as card1, {CardsDB.phrase} from {CardsDB.db_name}) as cards1
-                                        inner join {UsersDB.db_name}
-                                        on {UsersDB.db_name}.{UsersDB.card_id}=card1
-                                    ) as joined
+                                    select from
+                                        {CardsDB.db_name} inner join {UsersDB.db_name}
+                                        on {UsersDB.db_name}.{UsersDB.card_id}={CardsDB.db_name}.{CardsDB.card_id}
                                     where {UsersDB.chat_id}=%s and {CardsDB.phrase}=%s
                                 """, (str(self.chat_id), self.word))
                 return cur.fetchone() is not None

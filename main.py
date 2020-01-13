@@ -60,7 +60,8 @@ def add_flash_card(update, context):
                            examples=meanings["examples"],
                            chat_id=chat_id)
     if flash_card.chech_if_exist():
-        update.message.reply_text("Вы уже добавили это слов, вот оно: \n{}".format(str(flash_card)))
+        update.message.reply_text("Вы уже добавили это слов, вот оно: \n{}".format(str(flash_card)),
+                                  parse_mode=telegram.ParseMode.MARKDOWN)
         return
     logger.info(f"Adding new card: {flash_card}")
     flash_card.add_to_database()
@@ -102,7 +103,8 @@ def check_for_updates(context):
         act.time += time_next
         activities.push(act)
     for act in acts:
-        context.bot.send_message(act.flash_card.chat_id, text="Повторите\n" + str(act.flash_card))
+        context.bot.send_message(act.flash_card.chat_id, text="Повторите\n" + str(act.flash_card),
+                                 parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 def error(update, context):
