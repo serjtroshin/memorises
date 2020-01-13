@@ -20,6 +20,7 @@ import json
 from time import time
 import os
 
+import telegram
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters)
 from FlashCard import FlashCard
 from Timer import Activity
@@ -70,7 +71,7 @@ def add_flash_card(update, context):
 
     activities.push(Activity(flash_card, saved_flash_card.time_next_delta + saved_flash_card.time_added.timestamp()))
 
-    update.message.reply_text("Новая карточка!\n" + str(flash_card))
+    update.message.reply_text("Новая карточка!\n" + str(flash_card), parse_mode=telegram.ParseMode.MARKDOWN)
 
 
 def start(update, context):

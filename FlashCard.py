@@ -14,7 +14,7 @@ class FlashCard:
         self.card_id = None
 
     def __str__(self):
-        message = "-----Карточка---\n"
+        message = "-----------------\n"
         message += "{} | {}".format(self.word, self.translation)
         message += "\n".join(list(
                       map(str, list(filter(lambda x: x is not None, [
@@ -88,7 +88,7 @@ class FlashCard:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(f"""
                                     select * from (
-                                        (select {CardsDB.card_id} as card1, * from {CardsDB.db_name}) as cards1
+                                        (select {CardsDB.card_id} as card1, {CardsDB.phrase} from {CardsDB.db_name}) as cards1
                                         inner join {UsersDB.db_name}
                                         on {UsersDB.db_name}.{UsersDB.card_id}=card1
                                     ) as joined

@@ -66,7 +66,7 @@ class YandexAPI:
             target = translation['text']
             if defin["pos"] == "noun" and "gen" in defin and src == "de": # ставим артикль
                 orig = YandexAPI.get_article(defin["gen"]) + " " + orig
-            elif translation["pos"] == "nout" and "gen" in translation and tgt == "de":
+            elif translation["pos"] == "noun" and "gen" in translation and tgt == "de":
                 target = YandexAPI.get_article(translation["gen"]) + " " + target
             examples = [(tr['tr'][0]['text'], tr['text']) for tr in translation['ex']] if 'ex' in translation else None
 
@@ -79,4 +79,4 @@ class YandexAPI:
 
 if __name__=="__main__":
     yandex_api = YandexAPI()
-    pprint.pprint(yandex_api.get("как дела"))
+    pprint.pprint(yandex_api.get("кот"))
