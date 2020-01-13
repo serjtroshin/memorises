@@ -12,7 +12,7 @@ class YandexAPI:
 
         self.urlDict = "https://dictionary.yandex.net/api/v1/dicservice.json/lookup?key={}&lang={}-{}&text="
         self.urlTranslate = "https://translate.yandex.net/api/v1.5/tr.json/translate?key={}&lang={}-{}&text="
-        self.urlDetectLang = "https://translate.yandex.net/api/v1.5/tr.json/detect?key={}&hint=de,ru&text=".format(self.keyTranslate)
+        self.urlDetectLang = "https://translate.yandex.net/api/v1.5/tr.json/detect?key={}&text=".format(self.keyTranslate)
 
     def getDictionary(self, word, src, tgt):
         url = self.urlDict.format(self.keyDict, src, tgt) + quote(word)
@@ -37,7 +37,6 @@ class YandexAPI:
         response = requests.get(
             url
         )
-        print(response.json())
         return response.json()["lang"]
 
 
@@ -63,11 +62,14 @@ class YandexAPI:
             return translations
         for defin in defins:
             orig = defin["text"]
-            if defin["pos"] == "noun" and "gen" in defin:
-                orig = YandexAPI.get_article(defin["gen"]) + " " + orig
             translation = defin["tr"][0]
-            examples = [(tr['tr'][0]['text'], tr['text']) for tr in translation['ex']] if 'ex' in translation else None
             target = translation['text']
+            if defin["pos"] == "noun" and "gen" in defin and src == "de": # ставим артикль
+                orig = YandexAPI.get_article(defin["gen"]) + " " + orig
+            elif translation["pos"] == "nout" and "gen" in translation and tgt == "de":
+                target = YandexAPI.get_article(translation["gen"]) + " " + target
+            examples = [(tr['tr'][0]['text'], tr['text']) for tr in translation['ex']] if 'ex' in translation else None
+
             translations.append(
                 {"orig": orig if not reverse else target,
                 "target" : target if not reverse else orig,
@@ -77,4 +79,4 @@ class YandexAPI:
 
 if __name__=="__main__":
     yandex_api = YandexAPI()
-    pprint.pprint(yandex_api.get("Hello! How are you doing"))
+    pprint.pprint(yandex_api.get("как дела"))
