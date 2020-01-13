@@ -12,7 +12,7 @@ class YandexAPI:
 
         self.urlDict = "https://dictionary.yandex.net/api/v1/dicservice.json/lookup?key={}&lang={}-{}&text="
         self.urlTranslate = "https://translate.yandex.net/api/v1.5/tr.json/translate?key={}&lang={}-{}&text="
-        self.urlDetectLang = "https://translate.yandex.net/api/v1.5/tr.json/detect?key={}&text=".format(self.keyTranslate)
+        self.urlDetectLang = "https://translate.yandex.net/api/v1.5/tr.json/detect?key={}&hint=de&text=".format(self.keyTranslate)
 
     def getDictionary(self, word, src, tgt):
         url = self.urlDict.format(self.keyDict, src, tgt) + quote(word)
@@ -79,4 +79,4 @@ class YandexAPI:
 
 if __name__=="__main__":
     yandex_api = YandexAPI()
-    pprint.pprint(yandex_api.get("кот"))
+    pprint.pprint(yandex_api.get("Hamster"))
