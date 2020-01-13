@@ -46,9 +46,6 @@ activities = Heap(key=lambda act: act.time)
 def add_flash_card(update, context):
     chat_id = update.message.chat_id
     word = update.message.text.strip()
-    if word in flash_cards:  # TODO check for every user
-        update.message.reply_text("Вы уже добавили это слов, вот оно: \n{}".format(str(flash_cards[word])))
-        return
 
     meanings = yandexAPI.get(word)
     if len(meanings) == 0:
@@ -61,6 +58,9 @@ def add_flash_card(update, context):
                            translation=meanings["target"],
                            examples=meanings["examples"],
                            chat_id=chat_id)
+    if flash_card.chech_if_exist():
+        update.message.reply_text("Вы уже добавили это слов, вот оно: \n{}".format(str(flash_card)))
+        return
     logger.info(f"Adding new card: {flash_card}")
     flash_card.add_to_database()
 

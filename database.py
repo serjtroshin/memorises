@@ -105,7 +105,7 @@ def create_database(recreate=False):
                         {CardsDB.card_id} serial primary key,
                         {CardsDB.phrase} varchar(4096),
                         {CardsDB.time_added} timestamp default current_timestamp,
-                        {CardsDB.time_next_delta} integer not null default 100
+                        {CardsDB.time_next_delta} integer not null default 3600
                     )
                 """)
                 cur.execute(f"""

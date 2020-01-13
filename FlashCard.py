@@ -22,7 +22,7 @@ class FlashCard:
                     ))))) + "\n"
         if not self.examples is None:
             message += "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples])
-        message += "--------------\n"
+        message += "-----------------\n"
         # message = self.word + "\n" + collinsAPI.get_url(self.word) + "\n"
         return message
 
@@ -82,3 +82,16 @@ class FlashCard:
                     returning {CardsDB.time_next_delta}
                 """, (self.card_id,))
                 return cur.fetchone()[0]
+
+    def chech_if_exist(self):
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+                cur.execute(f"""
+                                    select * from (
+                                        (select {CardsDB.card_id} as card1, * from {CardsDB.db_name}) as cards1
+                                        inner join {UsersDB.db_name}
+                                        on {UsersDB.db_name}.{UsersDB.card_id}=card1
+                                    ) as joined
+                                    where {UsersDB.chat_id}=%s and {CardsDB.phrase}=%s
+                                """, (str(self.chat_id), self.word))
+                return cur.fetchone() is not None
