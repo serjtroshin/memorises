@@ -74,7 +74,7 @@ def add_flash_card(update, context):
 
 
 def start(update, context):
-    update.message.reply_text('Привет! Я твой помощник в изучении немецкого языка! Напиши какое-нибудь слово на немецком языке, а я дам тебе его значение и напомню, когда ты начнешь его забывать!')
+    update.message.reply_text('Привет! Я твой помощник в изучении немецкого языка! Напиши какое-нибудь слово, а я дам тебе его значение и напомню, когда ты начнешь его забывать!')
     set_timer(update, context)
     chat_id = update.message.chat_id
 
