@@ -22,6 +22,12 @@ class Heap(object):
        heapq.heappush(self._data, (self.key(item), item))
        return item
 
+def get_hash(chat_id, word):
+    return str(chat_id) + "_" + str(word)
+
+def parse_hash(s):
+    return s.split("_")
+
 if __name__=="__main__":
     heap = Heap([])
     heap.push(0)

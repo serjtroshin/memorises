@@ -32,6 +32,19 @@ class YandexAPI:
     def get_article(gen):
         return {'f' : "die", "m" : "der", 'n' : "das"}[gen]
 
+    @staticmethod
+    def get_examples(jsn):
+        return [(tr['tr'][0]['text'], tr['text']) for tr in jsn['ex']] if 'ex' in jsn else None
+
+    @staticmethod
+    def get_synonyms(jsn):
+        return [syn['text'] for syn in jsn["syn"]] if "syn" in jsn else None
+
+    @staticmethod
+    def add_article(jsn):
+        assert 'gen' in jsn
+        return YandexAPI.get_article(jsn["gen"]) + " " + jsn["text"]
+
     def detectLanguage(self, orig):
         url = self.urlDetectLang + quote(orig)
         response = requests.get(
@@ -39,44 +52,59 @@ class YandexAPI:
         )
         return response.json()["lang"]
 
+    @staticmethod
+    def is_noun(jsn):
+        return jsn["pos"] == "noun" and "gen" in jsn
 
-    def get(self, orig):
+    def select_lang(self, orig):
         src = self.detectLanguage(orig)
-        reverse=False
+        reverse = False
         if src == "de":
             tgt = "ru"
         else:
             tgt = "de"
-            reverse=True
+            reverse = True
+        return src, tgt, reverse
+
+    @staticmethod
+    def is_german(lang):
+        return lang == "de"
+
+    def get(self, orig):
+        src, tgt, reverse = self.select_lang(orig)
         translations = []
-        defins = self.getDictionary(orig, src, tgt)['def']  # добавить выбор перевода из нескольких вариантов
+        defins = self.getDictionary(orig, src, tgt)['def']
         if len(defins) == 0: # если словарь подкачал, обращаемся к пеерводчику
             transl = self.getTranslation(orig, src, tgt)
             if transl["text"][0] == orig:
                 return []
             translations.append({
-                "orig" : orig if not reverse else transl["text"][0],
-                "target" : transl["text"][0] if not reverse else orig,
-                "examples": None
+                "orig" : orig,
+                "target" : transl["text"][0],
+                "examples": None,
+                "syns": None
             })
             return translations
-        for defin in defins:
-            orig = defin["text"]
-            translation = defin["tr"][0]
-            target = translation['text']
-            if defin["pos"] == "noun" and "gen" in defin and src == "de": # ставим артикль
-                orig = YandexAPI.get_article(defin["gen"]) + " " + orig
-            elif translation["pos"] == "noun" and "gen" in translation and tgt == "de":
-                target = YandexAPI.get_article(translation["gen"]) + " " + target
-            examples = [(tr['tr'][0]['text'], tr['text']) for tr in translation['ex']] if 'ex' in translation else None
-
-            translations.append(
-                {"orig": orig if not reverse else target,
-                "target" : target if not reverse else orig,
-                "examples" : examples})
+        for src_defin in defins:
+            orig = src_defin["text"]
+            if YandexAPI.is_noun(src_defin) and YandexAPI.is_german(src):  # ставим артикль
+                orig = YandexAPI.add_article(src_defin)
+            for translation in src_defin["tr"]:
+                target = translation['text']
+                if YandexAPI.is_noun(translation) and YandexAPI.is_german(tgt):
+                    target = YandexAPI.add_article(translation)
+                examples = YandexAPI.get_examples(translation)
+                syns = YandexAPI.get_synonyms(translation)
+                if syns is not None and YandexAPI.is_german(tgt):
+                    syns = list(map(YandexAPI.get_article, syns))
+                translations.append(
+                    {"orig": orig,
+                     "target" : target,
+                     "examples" : examples,
+                     "syns" : syns})
         return translations
 
 
 if __name__=="__main__":
     yandex_api = YandexAPI()
-    pprint.pprint(yandex_api.get("Hamster"))
+    pprint.pprint(yandex_api.get("привет"))

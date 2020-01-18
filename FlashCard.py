@@ -18,17 +18,17 @@ class FlashCard:
                       map(str, list(filter(lambda x: x is not None, [
                            self.definition]
                     )))))
-        examples_strings = "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples]) if not self.examples is None else ""
-        dash = "–" * max(len(self.word) + 5 + len(self.translation),
-                         max(map(len, definitions_strings.split('\n') + [""])),
-                         max(map(len, examples_strings.split('\n') + [""]))) + '\n'
-        message = dash + '\n'
+        examples_strings = "Примеры:\n" + "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples]) \
+            if not self.examples is None else ""
+        synonym_strings = "Синонимы:\n" + "".join([">>: {}\n".format(syn) for syn in self.synonyms]) \
+            if not self.synonyms is None else ""
+        message = ""
         message += "{} | {}".format(self.word, self.translation) + '\n'
         message += definitions_strings + "\n"
         if not self.examples is None:
             message += examples_strings
-        message += dash + '\n'
-        # message = self.word + "\n" + collinsAPI.get_url(self.word) + "\n"
+        if not self.synonyms is None:
+            message += synonym_strings
         return message
 
     def add_to_database(self):
