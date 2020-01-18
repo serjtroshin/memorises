@@ -86,7 +86,6 @@ class YandexAPI:
             })
             return translations
         for src_defin in defins:
-            orig = src_defin["text"]
             if YandexAPI.is_noun(src_defin) and YandexAPI.is_german(src):  # ставим артикль
                 orig = YandexAPI.add_article(src_defin)
             for translation in src_defin["tr"]:
@@ -107,4 +106,4 @@ class YandexAPI:
 
 if __name__=="__main__":
     yandex_api = YandexAPI()
-    pprint.pprint(yandex_api.get("привет"))
+    pprint.pprint(yandex_api.get("Балкон"))
