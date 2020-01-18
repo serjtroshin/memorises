@@ -45,19 +45,21 @@ activities = Heap(key=lambda act: act.time)
 
 cards_buffer = Heap(key=lambda act: act.time) # time -> chat_id
 cards_buffer_data = {} # chat_id -> data
-TIME_WAIT_FOR_RESPONSE=100 # sec
+TIME_WAIT_FOR_RESPONSE=10000 # sec
 
 CHOOSING, REPLY, EXIT = range(3)
 
 
 
 def get_meaning(meanings, update, context):
-    keyboard = [[InlineKeyboardButton(str(meaning["target"]), callback_data=get_hash(meaning["orig"], i))] for i,meaning in enumerate(meanings)]
+    print("get_meaning")
+    keyboard = [[InlineKeyboardButton(str(meaning["target"]), callback_data=get_hash(meaning["orig"], i, "__"))] for i,meaning in enumerate(meanings)]
     reply_markup = InlineKeyboardMarkup(keyboard, one_time_keyboard=True)
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
 def get_reply_meaning(update, context):
-    orig, i = parse_hash(update.callback_query["data"])
+    print("get_reply_meaning")
+    orig, i = parse_hash(update.callback_query["data"], "__")
     chat_id = update._effective_chat["id"]
     meanings = cards_buffer_data[get_hash(chat_id, orig)]
     add_flash_card(update, context, meanings[int(i)], chat_id)
@@ -65,6 +67,7 @@ def get_reply_meaning(update, context):
     return CHOOSING
 
 def choose_flash_card(update, context):
+    print("choose_flash_card")
     chat_id = update.message.chat_id
     word = update.message.text.strip()
 
@@ -80,6 +83,7 @@ def choose_flash_card(update, context):
     return REPLY
 
 def add_flash_card(update, context, meaning, chat_id):
+    print("add_flash_card")
     flash_card = FlashCard(word=meaning["orig"],
                            translation=meaning["target"],
                            examples=meaning["examples"],
@@ -156,7 +160,7 @@ def main():
     dp.add_handler(MessageHandler(Filters.text,
                                       choose_flash_card))
 
-    dp.add_handler(CallbackQueryHandler(get_reply_meaning, pass_chat_data=True))
+    dp.add_handler(CallbackQueryHandler(get_reply_meaning, pattern="^.*__\d*$", pass_chat_data=True))
 
     # log all errors
     dp.add_error_handler(error)
