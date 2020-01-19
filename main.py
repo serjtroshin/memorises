@@ -28,6 +28,7 @@ from Timer import Activity
 from YandexAPI import YandexAPI
 from Config import Config
 from database import create_database
+from database import apply_migrations
 
 
 TOKEN = Config.get_config()["keys"]["telegramkey"]
@@ -146,6 +147,7 @@ def error(update, context):
 
 def main():
     create_database()
+    apply_migrations()
 
     updater = Updater(TOKEN, request_kwargs=REQUEST_KWARGS, use_context=True)
 

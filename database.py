@@ -4,6 +4,9 @@ import json
 import logging
 from Config import Config
 import os
+from yoyo import read_migrations
+from yoyo import get_backend
+from argparse import ArgumentParser
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -47,13 +50,14 @@ class UsersDB:
 class CardsDB:
     db_name = "cards"
     card_id = "card_id"
-    phrase = "phrase"
+    phrase_id = "phrase_id"
     time_added = "time_added"
     time_next_delta = "time_next_delta"
 
 
 class PhrasesDB:
     db_name = "phrases"
+    phrase_id = "phrase_id"
     phrase = "phrase"
     translation = "translation"
     definition = "definition"
@@ -103,14 +107,15 @@ def create_database(recreate=False):
                 cur.execute(f"""
                     create table if not exists {CardsDB.db_name}(
                         {CardsDB.card_id} serial primary key,
-                        {CardsDB.phrase} varchar(4096),
+                        {CardsDB.phrase_id} integer not null,
                         {CardsDB.time_added} timestamp default current_timestamp,
                         {CardsDB.time_next_delta} integer not null default 3600
                     )
                 """)
                 cur.execute(f"""
                     create table if not exists {PhrasesDB.db_name}(
-                        {PhrasesDB.phrase} varchar(4096) primary key,
+                        {PhrasesDB.phrase_id} serial primary key,
+                        {PhrasesDB.phrase} varchar(4096),
                         {PhrasesDB.translation} text not null,
                         {PhrasesDB.definition} text,
                         {PhrasesDB.synonyms} text,
@@ -134,8 +139,8 @@ def create_database(recreate=False):
                 """)
                 cur.execute(f"""
                     alter table {CardsDB.db_name} add constraint
-                    cards_phrases_fkey foreign key ({CardsDB.phrase})
-                    references {PhrasesDB.db_name}({PhrasesDB.phrase})
+                    cards_phrases_fkey foreign key ({CardsDB.phrase_id})
+                    references {PhrasesDB.db_name}({PhrasesDB.phrase_id})
                 """)
 
                 # Indexes
@@ -164,5 +169,22 @@ def drop_database():
     conn.close()
 
 
+def apply_migrations():
+    if Config.database_url is None:
+        backend = get_backend(f'postgres://{Config.user}:{Config.password}@{Config.host}:{Config.port}/{Config.dbname}')
+    else:
+        backend = get_backend(Config.database_url)
+    migrations = read_migrations('migrations/')
+    with backend.lock():
+        backend.apply_migrations(backend.to_apply(migrations))
+
+
 if __name__ == "__main__":
-    create_database(recreate=False)
+    parser = ArgumentParser()
+    parser.add_argument('--recreate', action='store_true')
+
+    args = parser.parse_args()
+
+    create_database(recreate=args.recreate)
+    apply_migrations()
+

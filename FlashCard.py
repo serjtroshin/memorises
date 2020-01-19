@@ -46,15 +46,17 @@ class FlashCard:
                         %s, %s, %s, %s, %s
                     )
                     on conflict do nothing
+                    returning {PhrasesDB.phrase_id}
                 """, (self.word, self.translation, self.definition, self.synonyms, self.examples))
+                phrase_id = cur.fetchone()[0]
 
                 cur.execute(f"""
                         insert into {CardsDB.db_name}(
-                            {CardsDB.phrase}
+                            {CardsDB.phrase_id}
                         ) values (
                             %s
                         ) returning {CardsDB.card_id}
-                    """, (self.word,)
+                    """, (phrase_id,)
                 )
 
                 self.card_id = cur.fetchone()[0]
@@ -92,9 +94,10 @@ class FlashCard:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(f"""
-                                    select from
-                                        {CardsDB.db_name} inner join {UsersDB.db_name}
-                                        on {UsersDB.db_name}.{UsersDB.card_id}={CardsDB.db_name}.{CardsDB.card_id}
-                                    where {UsersDB.chat_id}=%s and {CardsDB.phrase}=%s
-                                """, (str(self.chat_id), self.word))
+                    select from {CardsDB.db_name} join {UsersDB.db_name}
+                    on {UsersDB.db_name}.{UsersDB.card_id}={CardsDB.db_name}.{CardsDB.card_id}
+                    join {PhrasesDB.db_name}
+                    on {CardsDB.db_name}.{CardsDB.phrase_id}={PhrasesDB.db_name}.{PhrasesDB.phrase_id}
+                    where {UsersDB.chat_id}=%s and {PhrasesDB.phrase}=%s and {PhrasesDB.translation}=%s
+                """, (str(self.chat_id), self.word, self.translation))
                 return cur.fetchone() is not None
