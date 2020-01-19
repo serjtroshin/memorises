@@ -93,10 +93,27 @@ def create_database(recreate=False):
                     logger.info(f"Creating database {Config.dbname}")
                     cur.execute(f"create database {Config.dbname}")
         conn.close()
+    else:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    select exists(
+                      select * from information_schema.tables where table_name=%s
+                    )
+                """, ("_created",))
+                exists = cur.fetchone()[0]
+        
 
     if not exists:
         with get_connection() as conn:
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            
             with conn.cursor() as cur:
+                cur.execute("""
+                    create table _created()
+                """
+                )
+
                 # Creating tables
                 cur.execute(f"""
                     create table if not exists {UsersDB.db_name}(
