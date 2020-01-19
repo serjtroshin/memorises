@@ -84,7 +84,7 @@ def choose_flash_card(update, context):
 
 def add_flash_card(update, context, meaning, chat_id):
     print("add_flash_card")
-    flash_card = FlashCard(word=meaning["orig"],
+    flash_card = FlashCard(word=meaning["source"],
                            translation=meaning["target"],
                            examples=meaning["examples"],
                            synonyms=meaning["syns"],

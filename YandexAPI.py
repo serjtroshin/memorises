@@ -80,14 +80,16 @@ class YandexAPI:
                 return []
             translations.append({
                 "orig" : orig,
+                "source": orig,
                 "target" : transl["text"][0],
                 "examples": None,
                 "syns": None
             })
             return translations
         for src_defin in defins:
+            source = orig
             if YandexAPI.is_noun(src_defin) and YandexAPI.is_german(src):  # ставим артикль
-                orig = YandexAPI.add_article(src_defin)
+                source = YandexAPI.add_article(src_defin)
             for translation in src_defin["tr"]:
                 target = translation['text']
                 if YandexAPI.is_noun(translation) and YandexAPI.is_german(tgt):
@@ -98,6 +100,7 @@ class YandexAPI:
                     syns = list(map(YandexAPI.get_article, syns))
                 translations.append(
                     {"orig": orig,
+                     "source": source,
                      "target" : target,
                      "examples" : examples,
                      "syns" : syns})
@@ -106,4 +109,4 @@ class YandexAPI:
 
 if __name__=="__main__":
     yandex_api = YandexAPI()
-    pprint.pprint(yandex_api.get("Балкон"))
+    pprint.pprint(yandex_api.get("Mädchen"))
