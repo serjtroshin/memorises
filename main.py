@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# This program is dedicated to the public domain under the CC0 license.
 
 """
 First, a few callback functions are defined. Then, those functions are passed to
@@ -108,21 +107,19 @@ def add_flash_card(update, context, meaning, chat_id):
 
 def start(update, context):
     logger.info(f"Start")
-    update.message.reply_text('Привет! Я твой помощник в изучении немецкого языка! Напиши какое-нибудь слово, а я дам тебе его значение и напомню, когда ты начнешь его забывать!')
-    set_timer(update, context)
+    update.message.reply_text('Привет! Я твой помощник в изучении немецкого языка! ' +
+                              'Напиши какое-нибудь слово, а я дам тебе его значение и напомню, ' +
+                              'когда ты начнешь его забывать! ' +
+                              'Переведено сервисом «Яндекс.Переводчик» (http://translate.yandex.ru)')
     chat_id = update.message.chat_id
     return CHOOSING
 
-def set_timer(update, context):
+def set_timer(j):
     """Add a job to the queue."""
-    chat_id = update.message.chat_id
     due = 5
-    # Add job to queue and stop current one if there is a timer already
-    new_job = context.job_queue.run_repeating(check_for_updates, due, context=chat_id)
-    context.chat_data['job'] = new_job
+    j.run_repeating(check_for_updates, due)
 
 def check_for_updates(context):
-    job = context.job
     global activities
     cur_time = time()
     acts = []
@@ -150,6 +147,9 @@ def main():
     apply_migrations()
 
     updater = Updater(TOKEN, request_kwargs=REQUEST_KWARGS, use_context=True)
+
+    j = updater.job_queue
+    set_timer(j)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
