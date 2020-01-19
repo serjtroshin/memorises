@@ -1,9 +1,11 @@
 from time import time
 from database import get_connection, UsersDB, CardsDB, PhrasesDB
 from psycopg2.extras import NamedTupleCursor
+from settings import TIME_BEFORE_FIRST_SHOW
 
 class FlashCard:
-    def __init__(self, word=None, translation=None, definition=None, synonyms=None, examples=None, chat_id=None):
+    def __init__(self, word=None, translation=None, definition=None, synonyms=None,
+                 examples=None, chat_id=None, card_id=None, time_added=None, time_next_delta=None):
         self.word = word
         self.translation = translation
         self.definition = definition
@@ -11,7 +13,10 @@ class FlashCard:
         self.synonyms = synonyms
 
         self.chat_id = chat_id
-        self.card_id = None
+        self.card_id = card_id
+
+        self.time_added = time_added
+        self.time_next_delta = time_next_delta
 
     def __str__(self):
         definitions_strings = "\n".join(list(
@@ -52,14 +57,15 @@ class FlashCard:
 
                 cur.execute(f"""
                         insert into {CardsDB.db_name}(
-                            {CardsDB.phrase_id}
+                            {CardsDB.phrase_id},
+                            {CardsDB.time_next_delta}
                         ) values (
-                            %s
-                        ) returning {CardsDB.card_id}
-                    """, (phrase_id,)
+                            %s, %s
+                        ) returning {CardsDB.card_id}, {CardsDB.time_added}, {CardsDB.time_next_delta}
+                    """, (phrase_id, TIME_BEFORE_FIRST_SHOW)
                 )
-
-                self.card_id = cur.fetchone()[0]
+                ret = cur.fetchone()
+                self.card_id, self.time_added, self.time_next_delta = ret
 
                 cur.execute(f"""
                     insert into {UsersDB.db_name}(
@@ -70,14 +76,31 @@ class FlashCard:
                     )
                 """, (self.chat_id, self.card_id))
 
-    def get_from_database(self):
+    def fill_from_database(self):
         with get_connection() as conn:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(f"""
-                    select * from {CardsDB.db_name}
-                    where {CardsDB.card_id}=%s
+                    select {PhrasesDB.db_name}.{PhrasesDB.phrase}, 
+                           {PhrasesDB.db_name}.{PhrasesDB.translation}, 
+                           {PhrasesDB.db_name}.{PhrasesDB.definition},
+                           {PhrasesDB.db_name}.{PhrasesDB.synonyms},
+                           {PhrasesDB.db_name}.{PhrasesDB.examples},
+                           {CardsDB.db_name}.{CardsDB.time_added},
+                           {CardsDB.db_name}.{CardsDB.time_next_delta},
+                           {UsersDB.db_name}.{UsersDB.chat_id}
+                    from {CardsDB.db_name} join {PhrasesDB.db_name}
+                    on {PhrasesDB.db_name}.{PhrasesDB.phrase_id}={CardsDB.db_name}.{CardsDB.phrase_id}
+                    join {UsersDB.db_name} on {CardsDB.db_name}.{CardsDB.card_id}={UsersDB.db_name}.{UsersDB.card_id}
+                    where {CardsDB.db_name}.{CardsDB.card_id}=%s
                 """, (self.card_id,))
-                return cur.fetchone()
+                record = cur.fetchone()
+                self.word=record.phrase
+                self.translation=record.translation
+                self.examples=record.examples
+                self.synonyms=record.synonyms
+                self.chat_id=record.chat_id
+                self.time_added=record.time_added
+                self.time_next_delta=record.time_next_delta
 
     def update(self):
         with get_connection() as conn:
@@ -101,3 +124,14 @@ class FlashCard:
                     where {UsersDB.chat_id}=%s and {PhrasesDB.phrase}=%s and {PhrasesDB.translation}=%s
                 """, (str(self.chat_id), self.word, self.translation))
                 return cur.fetchone() is not None
+
+def get_all_flash_cards():
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+            cur.execute(f"""
+                select {CardsDB.card_id}, {CardsDB.time_added}, {CardsDB.time_next_delta}
+                from {CardsDB.db_name}""") # todo add exceptions
+            return cur.fetchall()
+
+if  __name__ == "__main__":
+    print(get_all_flash_cards())

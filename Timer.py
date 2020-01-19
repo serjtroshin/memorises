@@ -1,4 +1,4 @@
 class Activity:
-    def __init__(self, flash_card, time):
+    def __init__(self, data, time):
         self.time = time
-        self.flash_card = flash_card
+        self.data = data

@@ -7,6 +7,7 @@ import os
 from yoyo import read_migrations
 from yoyo import get_backend
 from argparse import ArgumentParser
+from settings import TIME_BEFORE_FIRST_SHOW
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -126,7 +127,7 @@ def create_database(recreate=False):
                         {CardsDB.card_id} serial primary key,
                         {CardsDB.phrase_id} integer not null,
                         {CardsDB.time_added} timestamp default current_timestamp,
-                        {CardsDB.time_next_delta} integer not null default 3600
+                        {CardsDB.time_next_delta} integer not null default TIME_BEFORE_FIRST_SHOW
                     )
                 """)
                 cur.execute(f"""

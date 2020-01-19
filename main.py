@@ -18,11 +18,12 @@ from utils import Heap, get_hash, parse_hash
 import json
 from time import time
 import os
+from settings import TIME_WAIT_FOR_RESPONSE
 
 import telegram
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, ConversationHandler, MessageHandler, Filters, CallbackQueryHandler)
-from FlashCard import FlashCard
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
+from FlashCard import FlashCard, get_all_flash_cards
 from Timer import Activity
 from YandexAPI import YandexAPI
 from Config import Config
@@ -45,7 +46,6 @@ activities = Heap(key=lambda act: act.time)
 
 cards_buffer = Heap(key=lambda act: act.time) # time -> chat_id
 cards_buffer_data = {} # chat_id -> data
-TIME_WAIT_FOR_RESPONSE=10000 # sec
 
 CHOOSING, REPLY, EXIT = range(3)
 
@@ -94,13 +94,12 @@ def add_flash_card(update, context, meaning, chat_id):
                                  parse_mode=telegram.ParseMode.MARKDOWN)
         return
     logger.info(f"Adding new card: {flash_card}")
+
     flash_card.add_to_database()
 
-    saved_flash_card = flash_card.get_from_database()
-
     # print("****************REPEAT TIME", saved_flash_card.time_next_delta + saved_flash_card.time_added.timestamp())
-
-    activities.push(Activity(flash_card, saved_flash_card.time_next_delta + saved_flash_card.time_added.timestamp()))
+    print(flash_card.time_next_delta)
+    activities.push(Activity(flash_card.card_id, flash_card.time_next_delta + flash_card.time_added.timestamp()))
 
     context.bot.send_message(chat_id, text="Новая карточка!\n" + str(flash_card),
                              parse_mode=telegram.ParseMode.MARKDOWN)
@@ -110,7 +109,9 @@ def start(update, context):
     update.message.reply_text('Привет! Я твой помощник в изучении немецкого языка! ' +
                               'Напиши какое-нибудь слово, а я дам тебе его значение и напомню, ' +
                               'когда ты начнешь его забывать! ' +
-                              'Переведено сервисом «Яндекс.Переводчик» (http://translate.yandex.ru)')
+                              'Переведено сервисом «Яндекс.Переводчик», '+
+                              'реализовано с помощью сервиса «API «Яндекс.Словарь»'+
+                              '(http://translate.yandex.ru,  http://api.yandex.ru/dictionary)')
     chat_id = update.message.chat_id
     return CHOOSING
 
@@ -123,20 +124,27 @@ def check_for_updates(context):
     global activities
     cur_time = time()
     acts = []
+    if activities.top() is not None:
+        print(activities.top().time, cur_time)
     while activities.top() is not None and activities.top().time < cur_time:
         act = activities.pop()
         acts.append(act)
     for act in acts:
-        time_next = act.flash_card.update()
+        flash_card = FlashCard(card_id=act.data)
+        flash_card.fill_from_database()
+        time_next = flash_card.update()
         act.time += time_next
         activities.push(act)
-    for act in acts:
-        context.bot.send_message(act.flash_card.chat_id, text="Повторите\n" + str(act.flash_card),
+        context.bot.send_message(flash_card.chat_id, text="Повторите\n" + str(flash_card),
                                  parse_mode=telegram.ParseMode.MARKDOWN)
 
     while cards_buffer.top() is not None and cards_buffer.top().time < cur_time:
-        k = cards_buffer.pop().flash_card
+        k = cards_buffer.pop().data
         del cards_buffer_data[k]
+
+def add_flash_cards():
+    for record in get_all_flash_cards():
+        activities.push(Activity(record.card_id, record.time_next_delta + record.time_added.timestamp()))
 
 def error(update, context):
     """Log Errors caused by Updates."""
@@ -150,6 +158,7 @@ def main():
 
     j = updater.job_queue
     set_timer(j)
+    add_flash_cards()
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher

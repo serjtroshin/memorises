@@ -30,7 +30,10 @@ class YandexAPI:
 
     @staticmethod
     def get_article(gen):
-        return {'f' : "die", "m" : "der", 'n' : "das"}[gen]
+        try:
+            return {'f' : "die", "m" : "der", 'n' : "das"}[gen]
+        except KeyError:
+            return None
 
     @staticmethod
     def get_examples(jsn):
@@ -42,8 +45,10 @@ class YandexAPI:
 
     @staticmethod
     def add_article(jsn):
-        assert 'gen' in jsn
-        return YandexAPI.get_article(jsn["gen"]) + " " + jsn["text"]
+        art = YandexAPI.get_article(jsn["gen"])
+        if art == None:
+            return jsn["text"]
+        return art + " " + jsn["text"]
 
     def detectLanguage(self, orig):
         url = self.urlDetectLang + quote(orig)
@@ -96,8 +101,6 @@ class YandexAPI:
                     target = YandexAPI.add_article(translation)
                 examples = YandexAPI.get_examples(translation)
                 syns = YandexAPI.get_synonyms(translation)
-                if syns is not None and YandexAPI.is_german(tgt):
-                    syns = list(map(YandexAPI.get_article, syns))
                 translations.append(
                     {"orig": orig,
                      "source": source,
@@ -109,4 +112,4 @@ class YandexAPI:
 
 if __name__=="__main__":
     yandex_api = YandexAPI()
-    pprint.pprint(yandex_api.get("Mädchen"))
+    pprint.pprint(yandex_api.get("Hamster"))
