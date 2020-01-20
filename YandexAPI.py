@@ -112,4 +112,4 @@ class YandexAPI:
 
 if __name__=="__main__":
     yandex_api = YandexAPI()
-    pprint.pprint(yandex_api.get("Hamster"))
+    pprint.pprint(yandex_api.get("пока"))

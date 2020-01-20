@@ -18,7 +18,7 @@ from utils import Heap, get_hash, parse_hash
 import json
 from time import time
 import os
-from settings import TIME_WAIT_FOR_RESPONSE
+from settings import TIME_WAIT_FOR_RESPONSE, TIME_MULTIPLIER
 
 import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -124,8 +124,6 @@ def check_for_updates(context):
     global activities
     cur_time = time()
     acts = []
-    if activities.top() is not None:
-        print(activities.top().time, cur_time)
     while activities.top() is not None and activities.top().time < cur_time:
         act = activities.pop()
         acts.append(act)

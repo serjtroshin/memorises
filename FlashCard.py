@@ -1,7 +1,7 @@
 from time import time
 from database import get_connection, UsersDB, CardsDB, PhrasesDB
 from psycopg2.extras import NamedTupleCursor
-from settings import TIME_BEFORE_FIRST_SHOW
+from settings import TIME_BEFORE_FIRST_SHOW, TIME_MULTIPLIER
 
 class FlashCard:
     def __init__(self, word=None, translation=None, definition=None, synonyms=None,
@@ -25,7 +25,7 @@ class FlashCard:
                     )))))
         examples_strings = "Примеры:\n" + "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples]) \
             if not self.examples is None else ""
-        synonym_strings = "Синонимы:\n" + "".join([">>: {}\n".format(syn) for syn in self.synonyms]) \
+        synonym_strings = "Синонимы:\n" + "".join([">> {}\n".format(syn) for syn in self.synonyms]) \
             if not self.synonyms is None else ""
         message = ""
         message += "{} | {}".format(self.word, self.translation) + '\n'
@@ -76,6 +76,18 @@ class FlashCard:
                     )
                 """, (self.chat_id, self.card_id))
 
+
+    @staticmethod
+    def _retrieve(ob, tp):
+        if ob is None:
+            return None
+        if tp == "synonyms":
+            return ob[1:-1].split(",")
+        elif tp == "examples":
+            ob = eval(ob)
+            return {eval(i) for i in ob}
+        return None
+
     def fill_from_database(self):
         with get_connection() as conn:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
@@ -96,8 +108,8 @@ class FlashCard:
                 record = cur.fetchone()
                 self.word=record.phrase
                 self.translation=record.translation
-                self.examples=record.examples
-                self.synonyms=record.synonyms
+                self.examples=FlashCard._retrieve(record.examples, "examples")
+                self.synonyms=FlashCard._retrieve(record.synonyms, "synonyms")
                 self.chat_id=record.chat_id
                 self.time_added=record.time_added
                 self.time_next_delta=record.time_next_delta
@@ -107,7 +119,7 @@ class FlashCard:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(f"""
                     update {CardsDB.db_name}
-                    set {CardsDB.time_next_delta}={CardsDB.time_next_delta}*10
+                    set {CardsDB.time_next_delta}={CardsDB.time_next_delta}*TIME_MULTIPLIER
                     where {CardsDB.card_id}=%s
                     returning {CardsDB.time_next_delta}
                 """, (self.card_id,))
