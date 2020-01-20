@@ -137,6 +137,36 @@ class FlashCard:
                 """, (str(self.chat_id), self.word, self.translation))
                 return cur.fetchone() is not None
 
+    @staticmethod
+    def findall_in_database(word, chat_id):
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+                cur.execute(f"""
+                    select {PhrasesDB.db_name}.{PhrasesDB.phrase}, 
+                           {PhrasesDB.db_name}.{PhrasesDB.translation}, 
+                           {UsersDB.db_name}.{UsersDB.chat_id},
+                           {CardsDB.db_name}.{CardsDB.card_id}
+                    from {CardsDB.db_name} join {PhrasesDB.db_name}
+                    on {PhrasesDB.db_name}.{PhrasesDB.phrase_id}={CardsDB.db_name}.{CardsDB.phrase_id}
+                    join {UsersDB.db_name} on {CardsDB.db_name}.{CardsDB.card_id}={UsersDB.db_name}.{UsersDB.card_id}
+                    where {UsersDB.db_name}.{UsersDB.chat_id}=%s and 
+                    ({PhrasesDB.db_name}.{PhrasesDB.phrase}=%s or {PhrasesDB.db_name}.{PhrasesDB.translation}=%s)
+                """, (chat_id, word, word))
+                return cur.fetchall()
+
+    @staticmethod
+    def delete(card_id):
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+                cur.execute(f"""
+                    delete from {UsersDB.db_name} where {UsersDB.card_id}=%s
+                """, (card_id,))
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+                cur.execute(f"""
+                    delete from {CardsDB.db_name} where {CardsDB.card_id}=%s
+                """, (card_id,))
+
 def get_all_flash_cards():
     with get_connection() as conn:
         with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
@@ -145,5 +175,11 @@ def get_all_flash_cards():
                 from {CardsDB.db_name}""") # todo add exceptions
             return cur.fetchall()
 
+
+
 if  __name__ == "__main__":
-    print(get_all_flash_cards())
+    flashCard = FlashCard(card_id="10")
+    flashCard.fill_from_database()
+    print(flashCard)
+    print(flashCard.chat_id)
+    print(FlashCard.findall_in_database('привет', "124669989"))

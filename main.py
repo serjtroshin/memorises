@@ -55,11 +55,11 @@ def get_meaning(meanings, update, context):
     print("get_meaning")
     keyboard = [[InlineKeyboardButton(str(meaning["target"]), callback_data=get_hash(meaning["orig"], i, "__"))] for i,meaning in enumerate(meanings)]
     reply_markup = InlineKeyboardMarkup(keyboard, one_time_keyboard=True)
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+    update.message.reply_text('Возможные варианты:', reply_markup=reply_markup)
 
 def get_reply_meaning(update, context):
     print("get_reply_meaning")
-    orig, i = parse_hash(update.callback_query["data"], "__")
+    orig, i = update.callback_query["data"].split("__")[1:]
     chat_id = update._effective_chat["id"]
     meanings = cards_buffer_data[get_hash(chat_id, orig)]
     add_flash_card(update, context, meanings[int(i)], chat_id)
@@ -104,7 +104,25 @@ def add_flash_card(update, context, meaning, chat_id):
     context.bot.send_message(chat_id, text="Новая карточка!\n" + str(flash_card),
                              parse_mode=telegram.ParseMode.MARKDOWN)
 
+def delete_flash_card_request(update, context):
+    chat_id = update.message.chat_id
+    word = context.args[0].strip() # todo добавить проверку
+    records = FlashCard.findall_in_database(word, str(chat_id))
+    keyboard = [[InlineKeyboardButton(f"{record.phrase} | {record.translation}" , callback_data=f"DELETE__{record.card_id}")] for
+                i, record in enumerate(records)]
+    reply_markup = InlineKeyboardMarkup(keyboard, one_time_keyboard=True)
+    update.message.reply_text('Какую карточку удалить?:', reply_markup=reply_markup)
+
+def delete_flash_card_chosen(update, context):
+    card_id = int(update.callback_query["data"].split("__")[1])
+    chat_id = update._effective_chat["id"]
+    FlashCard.delete(card_id)
+    context.bot.send_message(chat_id, text="Карточка успешно удалена",
+                             parse_mode=telegram.ParseMode.MARKDOWN)
+
+
 def start(update, context):
+    print(context)
     logger.info(f"Start")
     update.message.reply_text('Привет! Я твой помощник в изучении немецкого языка! ' +
                               'Напиши какое-нибудь слово, а я дам тебе его значение и напомню, ' +
@@ -129,12 +147,16 @@ def check_for_updates(context):
         acts.append(act)
     for act in acts:
         flash_card = FlashCard(card_id=act.data)
-        flash_card.fill_from_database()
-        time_next = flash_card.update()
-        act.time += time_next
-        activities.push(act)
-        context.bot.send_message(flash_card.chat_id, text="Повторите\n" + str(flash_card),
-                                 parse_mode=telegram.ParseMode.MARKDOWN)
+        try:
+            flash_card.fill_from_database()
+            time_next = flash_card.update()
+            act.time += time_next
+            activities.push(act)
+            context.bot.send_message(flash_card.chat_id, text="Повторите\n" + str(flash_card),
+                                     parse_mode=telegram.ParseMode.MARKDOWN)
+        except Exception as e:
+            logger.info(e)
+
 
     while cards_buffer.top() is not None and cards_buffer.top().time < cur_time:
         k = cards_buffer.pop().data
@@ -165,11 +187,13 @@ def main():
 
 
     dp.add_handler(CommandHandler('start', start))
+    dp.add_handler(CommandHandler('delete', delete_flash_card_request))
 
     dp.add_handler(MessageHandler(Filters.text,
                                       choose_flash_card))
 
-    dp.add_handler(CallbackQueryHandler(get_reply_meaning, pattern="^.*__\d*$", pass_chat_data=True))
+    dp.add_handler(CallbackQueryHandler(get_reply_meaning, pattern="^ADD__.*__\d*$", pass_chat_data=True))
+    dp.add_handler(CallbackQueryHandler(delete_flash_card_chosen, pattern="^DELETE__[\w\d]*$", pass_chat_data=True))
 
     # log all errors
     dp.add_error_handler(error)
