@@ -1,8 +1,10 @@
-import json
-import requests
-from urllib.parse import quote
 import pprint
-from Config import Config
+from urllib.parse import quote
+
+import requests
+
+from config import Config
+
 
 class YandexAPI:
     def __init__(self, src="de", tgt="ru"):
@@ -10,51 +12,58 @@ class YandexAPI:
         self.keyDict = config["keys"]["YandexDictionary"]
         self.keyTranslate = config["keys"]["YandexTranslate"]
 
-        self.urlDict = "https://dictionary.yandex.net/api/v1/dicservice.json/lookup?key={}&lang={}-{}&text="
-        self.urlTranslate = "https://translate.yandex.net/api/v1.5/tr.json/translate?key={}&lang={}-{}&text="
-        self.urlDetectLang = "https://translate.yandex.net/api/v1.5/tr.json/detect?key={}&hint=de&text=".format(self.keyTranslate)
+        self.urlDict = (
+            "https://dictionary.yandex.net/api/v1/dicservice.json/lookup?"
+            "key={}&lang={}-{}&text="
+        )
+        self.urlTranslate = (
+            "https://translate.yandex.net/api/v1.5/tr.json/translate?"
+            "key={}&lang={}-{}&text="
+        )
+        self.urlDetectLang = (
+            "https://translate.yandex.net/api/v1.5/tr.json/detect?"
+            "key={}&hint=de&text="
+        )
 
     def getDictionary(self, word, src, tgt):
         url = self.urlDict.format(self.keyDict, src, tgt) + quote(word)
-        response = requests.get(
-            url
-        )
+        response = requests.get(url)
         return response.json()
 
     def getTranslation(self, word, src, tgt):
         url = self.urlTranslate.format(self.keyTranslate, src, tgt) + quote(word)
-        response = requests.get(
-            url
-        )
+        response = requests.get(url)
         return response.json()
 
     @staticmethod
     def get_article(gen):
         try:
-            return {'f' : "die", "m" : "der", 'n' : "das"}[gen]
+            return {"f": "die", "m": "der", "n": "das"}[gen]
         except KeyError:
             return None
 
     @staticmethod
     def get_examples(jsn):
-        return [(tr['tr'][0]['text'], tr['text']) for tr in jsn['ex']] if 'ex' in jsn else None
+        return (
+            [(tr["tr"][0]["text"], tr["text"]) for tr in jsn["ex"]]
+            if "ex" in jsn
+            else None
+        )
 
     @staticmethod
     def get_synonyms(jsn):
-        return [syn['text'] for syn in jsn["syn"]] if "syn" in jsn else None
+        return [syn["text"] for syn in jsn["syn"]] if "syn" in jsn else None
 
     @staticmethod
     def add_article(jsn):
         art = YandexAPI.get_article(jsn["gen"])
-        if art == None:
+        if art is None:
             return jsn["text"]
         return art + " " + jsn["text"]
 
     def detectLanguage(self, orig):
-        url = self.urlDetectLang + quote(orig)
-        response = requests.get(
-            url
-        )
+        url = self.urlDetectLang.format(self.keyTranslate) + quote(orig)
+        response = requests.get(url)
         return response.json()["lang"]
 
     @staticmethod
@@ -78,38 +87,45 @@ class YandexAPI:
     def get(self, orig):
         src, tgt, reverse = self.select_lang(orig)
         translations = []
-        defins = self.getDictionary(orig, src, tgt)['def']
-        if len(defins) == 0: # если словарь подкачал, обращаемся к пеерводчику
+        defins = self.getDictionary(orig, src, tgt)["def"]
+        if len(defins) == 0:  # если словарь подкачал, обращаемся к пеерводчику
             transl = self.getTranslation(orig, src, tgt)
             if transl["text"][0] == orig:
                 return []
-            translations.append({
-                "orig" : orig,
-                "source": orig,
-                "target" : transl["text"][0],
-                "examples": None,
-                "syns": None
-            })
+            translations.append(
+                {
+                    "orig": orig,
+                    "source": orig,
+                    "target": transl["text"][0],
+                    "examples": None,
+                    "syns": None,
+                }
+            )
             return translations
         for src_defin in defins:
             source = orig
-            if YandexAPI.is_noun(src_defin) and YandexAPI.is_german(src):  # ставим артикль
+            if YandexAPI.is_noun(src_defin) and YandexAPI.is_german(
+                src
+            ):  # ставим артикль
                 source = YandexAPI.add_article(src_defin)
             for translation in src_defin["tr"]:
-                target = translation['text']
+                target = translation["text"]
                 if YandexAPI.is_noun(translation) and YandexAPI.is_german(tgt):
                     target = YandexAPI.add_article(translation)
                 examples = YandexAPI.get_examples(translation)
                 syns = YandexAPI.get_synonyms(translation)
                 translations.append(
-                    {"orig": orig,
-                     "source": source,
-                     "target" : target,
-                     "examples" : examples,
-                     "syns" : syns})
+                    {
+                        "orig": orig,
+                        "source": source,
+                        "target": target,
+                        "examples": examples,
+                        "syns": syns,
+                    }
+                )
         return translations
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     yandex_api = YandexAPI()
     pprint.pprint(yandex_api.get("пока"))
