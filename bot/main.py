@@ -132,7 +132,6 @@ def add_flash_card(update, context, meaning, chat_id):
 
     flash_card.add_to_database()
 
-    print(flash_card.time_next_delta)
     activities.push(
         Activity(
             flash_card.card_id,
@@ -154,7 +153,7 @@ def delete_flash_card_request(update, context):
     User may choose one of the cards to delete or ignore.
     """
     chat_id = update.message.chat_id
-    word = context.args[0].strip()  # todo добавить проверку
+    word = " ".join(context.args).strip()
     records = FlashCard.findall_in_database(word, str(chat_id))
     keyboard = [
         [
@@ -174,7 +173,7 @@ def delete_flash_card_chosen(update, context):
     Called when the user clicked on the flash card from the list created by `delete_flash_card_request`.
     Permanently removes a card from the database.
     """
-    card_id = int(parse_string(update.callback_query["data"], nokey=True))
+    card_id = int(parse_string(update.callback_query["data"], nokey=True)[0])
     chat_id = update._effective_chat["id"]
     FlashCard.delete(card_id)
     context.bot.send_message(
@@ -183,7 +182,6 @@ def delete_flash_card_chosen(update, context):
 
 
 def start(update, context):
-    print(context)
     logger.info(f"Start")
     update.message.reply_text(
         "Привет! Я твой помощник в изучении немецкого языка! "
@@ -271,12 +269,12 @@ def main():
 
     dp.add_handler(
         CallbackQueryHandler(
-            get_reply_meaning, pattern=r"^ADD__.*__\d*$", pass_chat_data=True
+            get_reply_meaning, pattern=r"^ADD__.*$", pass_chat_data=True
         )
     )
     dp.add_handler(
         CallbackQueryHandler(
-            delete_flash_card_chosen, pattern=r"^DELETE__[\w\d]*$", pass_chat_data=True
+            delete_flash_card_chosen, pattern=r"^DELETE__.*$", pass_chat_data=True
         )
     )
 
