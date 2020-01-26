@@ -1,7 +1,7 @@
 
 # memorises
 
-**memorises** — a telegram bot for learning a foreign language written in Python.  
+**memorises** — a telegram bot for learning a foreign language written in Python 3.7.  
 **memorises** stores word cards and periodically notifies the user to recall them following [Ebbinghaus' hypothesis][ebbinghaus].  
 Currently, it mainly supports German–Russian language pair 🇩🇪-🇷🇺, but is not limited to it.  
 The word/phrase translation  is provided by [Yandex.Dictionary][dictionary] and [Yandex.Translate][translate]. 
