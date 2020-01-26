@@ -19,7 +19,7 @@ from flash_card import FlashCard
 from flash_card import get_all_flash_cards
 from settings import TIME_WAIT_FOR_RESPONSE
 from timer import Activity
-from utils import get_hash
+from utils import to_string, parse_string
 from utils import Heap
 from yandex_api import YandexAPI
 
@@ -36,8 +36,17 @@ logger = logging.getLogger(__name__)
 
 yandexAPI = YandexAPI()
 
+# Every time a card added to the bot, the card is stored in the database
+# and the fist activity for the card is created.
+# The activity is a pair of card_id and time it should be shown.
+# Every n seconds check_for_updated function is looking for ready activities.
+# If the activity is ready (the top of the heap has the `time` value less than current time())
+# it is extracted from the heap and added one more time with increased time delay.
+# Note: if the bot goes down, all the activities are to be recreated from the card info, when the bot is up
 activities = Heap(key=lambda act: act.time)
 
+# a buffer that stores cards until the user choose one
+# on that event the chosen card is exracted from the buffer
 cards_buffer = Heap(key=lambda act: act.time)  # time -> chat_id
 cards_buffer_data = {}  # chat_id -> data
 
@@ -45,11 +54,15 @@ CHOOSING, REPLY, EXIT = range(3)
 
 
 def get_meaning(meanings, update, context):
-    print("get_meaning")
+    """
+    :param meanings: a set of the different meanings of the word
+
+    Is asking a user to choose between meanings.
+    """
     keyboard = [
         [
             InlineKeyboardButton(
-                str(meaning["target"]), callback_data=get_hash(meaning["orig"], i, "__")
+                str(meaning["target"]), callback_data=to_string(meaning["orig"], i, key="ADD")
             )
         ]
         for i, meaning in enumerate(meanings)
@@ -59,17 +72,22 @@ def get_meaning(meanings, update, context):
 
 
 def get_reply_meaning(update, context):
-    print("get_reply_meaning")
-    orig, i = update.callback_query["data"].split("__")[1:]
+    """
+    Is called when the user has clicked on the one of the mearnings
+    """
+    orig, i = parse_string(update.callback_query["data"], nokey=True)
     chat_id = update._effective_chat["id"]
-    meanings = cards_buffer_data[get_hash(chat_id, orig)]
+    meanings = cards_buffer_data[to_string(chat_id, orig, key=None)]
     add_flash_card(update, context, meanings[int(i)], chat_id)
 
     return CHOOSING
 
 
 def choose_flash_card(update, context):
-    print("choose_flash_card")
+    """
+    Is called, when the user sends the message to the bot.
+    It checks if the word is unknown. Otherwise it sends a list of the possible meanings to the user.
+    """
     chat_id = update.message.chat_id
     word = update.message.text.strip()
 
@@ -82,15 +100,20 @@ def choose_flash_card(update, context):
     else:
         get_meaning(meanings, update=update, context=context)
         cards_buffer.push(
-            Activity(get_hash(chat_id, word), time() + TIME_WAIT_FOR_RESPONSE)
+            Activity(to_string(chat_id, word, key=None), time() + TIME_WAIT_FOR_RESPONSE)
         )
-        cards_buffer_data[get_hash(chat_id, word)] = meanings
+        cards_buffer_data[to_string(chat_id, word, key=None)] = meanings
 
     return REPLY
 
 
 def add_flash_card(update, context, meaning, chat_id):
-    print("add_flash_card")
+    """
+    :param meaning: one of the meanings, chosen by a user
+    :param chat_id: id of the user's chat
+
+    Adds a card to the database and creates the first associated activity.
+    """
     flash_card = FlashCard(
         word=meaning["source"],
         translation=meaning["target"],
@@ -125,6 +148,11 @@ def add_flash_card(update, context, meaning, chat_id):
 
 
 def delete_flash_card_request(update, context):
+    """
+    Is called when a `/delete [phrase]` method is called.
+    Returns the possible cards associated with phrase to be deleted.
+    User may choose one of the cards to delete or ignore.
+    """
     chat_id = update.message.chat_id
     word = context.args[0].strip()  # todo добавить проверку
     records = FlashCard.findall_in_database(word, str(chat_id))
@@ -142,7 +170,11 @@ def delete_flash_card_request(update, context):
 
 
 def delete_flash_card_chosen(update, context):
-    card_id = int(update.callback_query["data"].split("__")[1])
+    """
+    Called when the user clicked on the flash card from the list created by `delete_flash_card_request`.
+    Permanently removes a card from the database.
+    """
+    card_id = int(parse_string(update.callback_query["data"], nokey=True))
     chat_id = update._effective_chat["id"]
     FlashCard.delete(card_id)
     context.bot.send_message(
@@ -171,6 +203,9 @@ def set_timer(j):
 
 
 def check_for_updates(context):
+    """
+    Checks activities in a loop. If activity is ready handles it, resetting it's time.
+    """
     global activities
     cur_time = time()
     acts = []
@@ -198,6 +233,9 @@ def check_for_updates(context):
 
 
 def add_flash_cards():
+    """
+    On the start of the bot set all the activities.
+    """
     for record in get_all_flash_cards():
         activities.push(
             Activity(

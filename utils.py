@@ -22,11 +22,16 @@ class Heap(object):
        heapq.heappush(self._data, (self.key(item), item))
        return item
 
-def get_hash(chat_id, word, delim="_"):
-    return str(chat_id) + delim + str(word)
+def to_string(*args, key="NOKEY"):
+    res = key if key is not None else ""
+    merged = '__'.join(map(str, args))
+    return f"{res}__{merged}"
 
-def parse_hash(s, delim="_"):
-    return s.split(delim)
+def parse_string(s, delim="__", nokey=False):
+    res = s.split(delim)
+    if nokey:
+        res = res[1:]
+    return res
 
 if __name__=="__main__":
     heap = Heap([])
