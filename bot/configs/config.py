@@ -1,8 +1,10 @@
-import yaml
 import json
 import os
 
+import yaml
+
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.yaml")
+
 
 class Config:
     @staticmethod
