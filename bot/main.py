@@ -19,7 +19,7 @@ from .flash_card import FlashCard
 from .flash_card import get_all_flash_cards
 from .configs.settings import TIME_WAIT_FOR_RESPONSE
 from .timer import Activity
-from .utils import to_string, parse_string
+from .utils import to_string, parse_string, error_handler
 from .utils import Heap
 from .api.yandex_api import YandexAPI
 
@@ -53,6 +53,7 @@ cards_buffer_data = {}  # chat_id -> data
 CHOOSING, REPLY, EXIT = range(3)
 
 
+@error_handler
 def get_meaning(meanings, update, context):
     """
     :param meanings: a set of the different meanings of the word
@@ -71,6 +72,7 @@ def get_meaning(meanings, update, context):
     update.message.reply_text("Возможные варианты:", reply_markup=reply_markup)
 
 
+@error_handler
 def get_reply_meaning(update, context):
     """
     Is called when the user has clicked on the one of the mearnings
@@ -83,6 +85,7 @@ def get_reply_meaning(update, context):
     return CHOOSING
 
 
+@error_handler
 def choose_flash_card(update, context):
     """
     Is called, when the user sends the message to the bot.
@@ -107,6 +110,7 @@ def choose_flash_card(update, context):
     return REPLY
 
 
+@error_handler
 def add_flash_card(update, context, meaning, chat_id):
     """
     :param meaning: one of the meanings, chosen by a user
@@ -146,6 +150,7 @@ def add_flash_card(update, context, meaning, chat_id):
     )
 
 
+@error_handler
 def delete_flash_card_request(update, context):
     """
     Is called when a `/delete [phrase]` method is called.
@@ -168,6 +173,7 @@ def delete_flash_card_request(update, context):
     update.message.reply_text("Какую карточку удалить?:", reply_markup=reply_markup)
 
 
+@error_handler
 def delete_flash_card_chosen(update, context):
     """
     Called when the user clicked on the flash card from the list created by `delete_flash_card_request`.
@@ -200,6 +206,7 @@ def set_timer(j):
     j.run_repeating(check_for_updates, due)
 
 
+@error_handler
 def check_for_updates(context):
     """
     Checks activities in a loop. If activity is ready handles it, resetting it's time.
@@ -230,6 +237,7 @@ def check_for_updates(context):
         del cards_buffer_data[k]
 
 
+@error_handler
 def add_flash_cards():
     """
     On the start of the bot set all the activities.

@@ -1,4 +1,5 @@
 import heapq
+import traceback
 
 class Heap(object):
    def __init__(self, initial=None, key=lambda x:x):
@@ -33,7 +34,18 @@ def parse_string(s, delim="__", nokey=False):
         res = res[1:]
     return res
 
+def error_handler(func):
+    def wrapper(*args, **kwargs):
+        try:
+            func()
+        except Exception as e:
+            print("error:", e)
+            traceback.print_exc()
+    return wrapper
+
+
 if __name__=="__main__":
     heap = Heap([])
     heap.push(0)
     print(heap.pop(), heap.pop())
+
