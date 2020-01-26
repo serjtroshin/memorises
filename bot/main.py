@@ -12,16 +12,16 @@ from telegram.ext import Filters
 from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
-from config import Config
-from database import apply_migrations
-from database import create_database
-from flash_card import FlashCard
-from flash_card import get_all_flash_cards
-from settings import TIME_WAIT_FOR_RESPONSE
-from timer import Activity
-from utils import to_string, parse_string
-from utils import Heap
-from yandex_api import YandexAPI
+from .configs.config import Config
+from .database import apply_migrations
+from .database import create_database
+from .flash_card import FlashCard
+from .flash_card import get_all_flash_cards
+from .configs.settings import TIME_WAIT_FOR_RESPONSE
+from .timer import Activity
+from .utils import to_string, parse_string
+from .utils import Heap
+from .api.yandex_api import YandexAPI
 
 
 TOKEN = Config.get_config()["keys"]["telegramkey"]

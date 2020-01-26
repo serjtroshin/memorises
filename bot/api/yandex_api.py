@@ -3,7 +3,7 @@ from urllib.parse import quote
 
 import requests
 
-from config import Config
+from bot.configs.config import Config
 
 
 class YandexAPI:

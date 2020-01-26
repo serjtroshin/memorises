@@ -1,11 +1,11 @@
 from psycopg2.extras import NamedTupleCursor
 
-from database import CardsDB
-from database import get_connection
-from database import PhrasesDB
-from database import UsersDB
-from settings import TIME_BEFORE_FIRST_SHOW
-from settings import TIME_MULTIPLIER
+from .database import CardsDB
+from .database import get_connection
+from .database import PhrasesDB
+from .database import UsersDB
+from .configs.settings import TIME_BEFORE_FIRST_SHOW
+from .configs.settings import TIME_MULTIPLIER
 
 
 class FlashCard:

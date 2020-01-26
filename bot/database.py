@@ -7,8 +7,8 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from yoyo import get_backend
 from yoyo import read_migrations
 
-from config import Config
-from settings import TIME_BEFORE_FIRST_SHOW
+from bot.configs.config import Config
+from bot.configs.settings import TIME_BEFORE_FIRST_SHOW
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
