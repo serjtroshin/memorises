@@ -37,7 +37,7 @@ def parse_string(s, delim="__", nokey=False):
 def error_handler(func):
     def wrapper(*args, **kwargs):
         try:
-            func()
+            func(*args, **kwargs)
         except Exception as e:
             print("error:", e)
             traceback.print_exc()
