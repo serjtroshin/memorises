@@ -26,7 +26,7 @@ from .api.yandex_api import YandexAPI
 
 TOKEN = Config.get_config()["keys"]["telegramkey"]
 
-REQUEST_KWARGS = None  # if you want to use proxy
+REQUEST_KWARGS = Config.get_config()["proxy"]
 
 # Enable logging
 logging.basicConfig(

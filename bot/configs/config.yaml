@@ -13,3 +13,18 @@ database:
   host: "127.0.0.1"
   port: "5432"
   timeout: 60
+
+# Proxy configuration
+# ---
+# If you want to use proxy, set
+# 'proxy_url' to be the proxy's url,
+# e.g. 'socks5://127.0.0.1:1234',
+# and optionally uncomment and set
+# credentials if required
+# ---
+proxy:
+  proxy_url: ~
+  # urllib3_proxy_kwargs:
+  #  'username': 'PROXY_USER',
+  #  'password': 'PROXY_PASS',
+
