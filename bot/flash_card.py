@@ -215,14 +215,13 @@ class FlashCard:
                 """,
                     (card_id,),
                 )
-        with get_connection() as conn:
-            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(
                     f"""
                     delete from {CardsDB.db_name} where {CardsDB.card_id}=%s
                 """,
                     (card_id,),
                 )
+                return cur.rowcount
 
 
 def get_all_flash_cards():
