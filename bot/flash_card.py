@@ -34,27 +34,23 @@ class FlashCard:
         self.time_next_delta = time_next_delta
 
     def __str__(self):
-        definitions_strings = "\n".join(
-            list(map(str, list(filter(lambda x: x is not None, [self.definition]))))
-        )
+        definitions_strings = self.definition if self.definition is not None else ""
         examples_strings = (
             "Примеры:\n"
             + "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples])
-            if self.examples is not None
+            if self.examples
             else ""
         )
         synonym_strings = (
             "Синонимы:\n" + "".join([">> {}\n".format(syn) for syn in self.synonyms])
-            if self.synonyms is not None
+            if self.synonyms
             else ""
         )
         message = ""
         message += "{} | {}".format(self.word, self.translation) + "\n"
         message += definitions_strings + "\n"
-        if self.examples is not None:
-            message += examples_strings
-        if self.synonyms is not None:
-            message += synonym_strings
+        message += examples_strings
+        message += synonym_strings
         return message
 
     def add_to_database(self):

@@ -50,8 +50,7 @@ activities = Heap(key=lambda act: act.time)
 cards_buffer = Heap(key=lambda act: act.time)  # time -> chat_id
 cards_buffer_data = {}  # chat_id -> data
 
-CHOOSING, REPLY, EXIT = range(3)
-
+OTHER = '_OTHER_'
 
 @error_handler
 def get_meaning(meanings, update, context):
@@ -68,6 +67,11 @@ def get_meaning(meanings, update, context):
         ]
         for i, meaning in enumerate(meanings)
     ]
+    keyboard.append([
+        InlineKeyboardButton(
+            "Другое...", callback_data=OTHER
+        )
+    ])
     reply_markup = InlineKeyboardMarkup(keyboard, one_time_keyboard=True)
     update.message.reply_text("Возможные варианты:", reply_markup=reply_markup)
 
@@ -75,14 +79,40 @@ def get_meaning(meanings, update, context):
 @error_handler
 def get_reply_meaning(update, context):
     """
-    Is called when the user has clicked on the one of the mearnings
+    Is called when the user has clicked on the one of the meanings
     """
     orig, i = parse_string(update.callback_query["data"], nokey=True)
     chat_id = update._effective_chat["id"]
     meanings = cards_buffer_data[to_string(chat_id, orig, key=None)]
     add_flash_card(update, context, meanings[int(i)], chat_id)
 
-    return CHOOSING
+
+@error_handler
+def start_setting_custom_meaning(update, context):
+    chat_id = update._effective_chat["id"]
+    context.bot.send_message(
+        chat_id, "Введите перевод"
+    )
+    context.user_data["custom"] = True
+
+
+@error_handler
+def set_custom_meaning(update, context):
+    """
+    Is called when user put custom translation of phrase
+    """
+    chat_id = update.message.chat_id
+    word = context.user_data["word"]
+    target = update.message.text.strip()
+
+    meaning = {
+        "orig": word,
+        "source": word,
+        "target": target,
+        "examples": [],
+        "syns": [],
+    }
+    add_flash_card(update, context, meaning, chat_id)
 
 
 @error_handler
@@ -91,23 +121,22 @@ def choose_flash_card(update, context):
     Is called, when the user sends the message to the bot.
     It checks if the word is unknown. Otherwise it sends a list of the possible meanings to the user.
     """
+    if "custom" in context.user_data:
+        set_custom_meaning(update, context)
+        del context.user_data["custom"]
+        return
+
     chat_id = update.message.chat_id
     word = update.message.text.strip()
+    context.user_data["word"] = word
 
     meanings = yandexAPI.get(word)
-    if len(meanings) == 0:
-        update.message.reply_text(
-            "К сожалению, слово {} мне неизвестно :(".format(word)
-        )
-        return  # предложить пользователю ввести свой вариант или удалить карточку
-    else:
-        get_meaning(meanings, update=update, context=context)
-        cards_buffer.push(
-            Activity(to_string(chat_id, word, key=None), time() + TIME_WAIT_FOR_RESPONSE)
-        )
-        cards_buffer_data[to_string(chat_id, word, key=None)] = meanings
 
-    return REPLY
+    get_meaning(meanings, update=update, context=context)
+    cards_buffer.push(
+        Activity(to_string(chat_id, word, key=None), time() + TIME_WAIT_FOR_RESPONSE)
+    )
+    cards_buffer_data[to_string(chat_id, word, key=None)] = meanings
 
 
 @error_handler
@@ -160,6 +189,10 @@ def delete_flash_card_request(update, context):
     chat_id = update.message.chat_id
     word = " ".join(context.args).strip()
     records = FlashCard.findall_in_database(word, str(chat_id))
+    if not records:
+        update.message.reply_text("Не найдено карточек")
+        return
+        
     keyboard = [
         [
             InlineKeyboardButton(
@@ -170,7 +203,7 @@ def delete_flash_card_request(update, context):
         for i, record in enumerate(records)
     ]
     reply_markup = InlineKeyboardMarkup(keyboard, one_time_keyboard=True)
-    update.message.reply_text("Какую карточку удалить?:", reply_markup=reply_markup)
+    update.message.reply_text("Какую карточку удалить?", reply_markup=reply_markup)
 
 
 @error_handler
@@ -187,6 +220,13 @@ def delete_flash_card_chosen(update, context):
     )
 
 
+def cancel(update, context):
+    logger.info(f"Cancel")
+    update.message.reply_text(
+        "Добавление карточки отменено"
+    )
+
+
 def start(update, context):
     logger.info(f"Start")
     update.message.reply_text(
@@ -197,7 +237,6 @@ def start(update, context):
         "реализовано с помощью сервиса «API «Яндекс.Словарь»"
         "(http://translate.yandex.ru,  http://api.yandex.ru/dictionary)"
     )
-    return CHOOSING
 
 
 def set_timer(j):
@@ -273,13 +312,21 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("delete", delete_flash_card_request))
 
-    dp.add_handler(MessageHandler(Filters.text, choose_flash_card))
+    
+    dp.add_handler(MessageHandler(Filters.text, choose_flash_card, pass_user_data=True))
 
     dp.add_handler(
         CallbackQueryHandler(
             get_reply_meaning, pattern=r"^ADD__.*$", pass_chat_data=True
         )
     )
+
+    dp.add_handler(
+        CallbackQueryHandler(
+            start_setting_custom_meaning, pattern=OTHER, pass_chat_data=True
+        )
+    )
+    
     dp.add_handler(
         CallbackQueryHandler(
             delete_flash_card_chosen, pattern=r"^DELETE__.*$", pass_chat_data=True
