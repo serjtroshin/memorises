@@ -23,10 +23,11 @@ from .utils import to_string, parse_string, error_handler
 from .utils import Heap
 from .api.yandex_api import YandexAPI
 
+config = Config.get_config()
 
-TOKEN = Config.get_config()["keys"]["telegramkey"]
+TOKEN = config["keys"]["telegramkey"]
 
-REQUEST_KWARGS = Config.get_config()["proxy"]
+REQUEST_KWARGS = config["proxy"] if "proxy" in config else None
 
 # Enable logging
 logging.basicConfig(
