@@ -129,6 +129,12 @@ def choose_flash_card(update, context):
 
     chat_id = update.message.chat_id
     word = update.message.text.strip()
+
+    if word.find('|') != -1:
+        context.user_data["word"], update.message.text = map(lambda s: s.strip(), word.split('|'))
+        set_custom_meaning(update, context)
+        return
+
     context.user_data["word"] = word
 
     meanings = yandexAPI.get(word)
