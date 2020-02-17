@@ -145,7 +145,7 @@ class FlashCard:
                 self.word = record.phrase
                 self.translation = record.translation
                 self.examples = FlashCard._retrieve(record.examples, "examples")
-                self.synonyms = FlashCard._retrieve(record.synonyms, "synonyms")
+                self.synonyms = list(filter(lambda s: s, FlashCard._retrieve(record.synonyms, "synonyms")))
                 self.chat_id = record.chat_id
                 self.time_added = record.time_added
                 self.time_next_delta = record.time_next_delta
