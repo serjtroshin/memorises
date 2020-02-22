@@ -161,7 +161,7 @@ def add_flash_card(update, context, meaning, chat_id):
         synonyms=meaning["syns"],
         chat_id=chat_id,
     )
-    if flash_card.chech_if_exist():
+    if flash_card.check_if_exist():
         context.bot.send_message(
             chat_id,
             text=f"Вы уже добавили это слово, вот оно: \n{flash_card}",

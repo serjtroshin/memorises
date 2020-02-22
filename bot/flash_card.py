@@ -164,7 +164,7 @@ class FlashCard:
                 )
                 return cur.fetchone()[0]
 
-    def chech_if_exist(self):
+    def check_if_exist(self):
         with get_connection() as conn:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(
@@ -175,8 +175,9 @@ class FlashCard:
                     join {PhrasesDB.db_name}
                     on {CardsDB.db_name}.{CardsDB.phrase_id}=
                         {PhrasesDB.db_name}.{PhrasesDB.phrase_id}
-                    where {UsersDB.chat_id}=%s and {PhrasesDB.phrase}=%s and
-                    {PhrasesDB.translation}=%s
+                    where {UsersDB.chat_id}=%s and
+                    lower({PhrasesDB.phrase})=lower(%s) and
+                    lower({PhrasesDB.translation})=lower(%s)
                 """,
                     (str(self.chat_id), self.word, self.translation),
                 )
@@ -198,8 +199,8 @@ class FlashCard:
                     join {UsersDB.db_name} on {CardsDB.db_name}.{CardsDB.card_id}=
                         {UsersDB.db_name}.{UsersDB.card_id}
                     where {UsersDB.db_name}.{UsersDB.chat_id}=%s and
-                    ({PhrasesDB.db_name}.{PhrasesDB.phrase}=%s or
-                    {PhrasesDB.db_name}.{PhrasesDB.translation}=%s)
+                    (lower({PhrasesDB.db_name}.{PhrasesDB.phrase})=lower(%s) or
+                    lower({PhrasesDB.db_name}.{PhrasesDB.translation})=lower(%s))
                 """,
                     (chat_id, word, word),
                 )

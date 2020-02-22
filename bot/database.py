@@ -189,6 +189,18 @@ def create_database(recreate=False):
                     {UsersDB.db_name}({UsersDB.chat_id})
                 """
                 )
+                cur.execute(
+                    f"""
+                    create index if not exists phrases_phrase_idx on
+                    {PhrasesDB.db_name}(lower({PhrasesDB.phrase}))
+                """
+                )
+                cur.execute(
+                    f"""
+                    create index if not exists phrases_translation_idx on
+                    {PhrasesDB.db_name}(lower({PhrasesDB.translation}))
+                """
+                )
 
 
 def drop_database():
