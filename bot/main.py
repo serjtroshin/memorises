@@ -184,6 +184,7 @@ def add_flash_card(update, context, meaning, chat_id):
         text="Новая карточка!\n" + str(flash_card),
         parse_mode=telegram.ParseMode.MARKDOWN,
     )
+    context.user_data["last_card"] = flash_card.word
 
 
 @error_handler
@@ -195,6 +196,11 @@ def delete_flash_card_request(update, context):
     """
     chat_id = update.message.chat_id
     word = " ".join(context.args).strip()
+    if word.strip() == "":
+        if "last_card" in context.user_data:
+            word = context.user_data["last_card"]
+            del context.user_data["last_card"]
+
     records = FlashCard.findall_in_database(word, str(chat_id))
     if not records:
         update.message.reply_text("Не найдено карточек")
