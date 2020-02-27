@@ -16,7 +16,11 @@ def check_for_updates(context):
     """
     Checks activities in a loop. If activity is ready handles it, resetting it's time.
     """
-    global cards_buffer, cards_buffer_data, activities, logger
+    logger = context.bot_data["logger"]
+    cards_buffer = context.bot_data["cards_buffer"]
+    cards_buffer_data = context.bot_data["cards_buffer_data"]
+    activities = context.bot_data["activities"]
+
     cur_time = time()
     acts = []
     while activities.top() is not None and activities.top().time < cur_time:
