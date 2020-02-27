@@ -7,7 +7,7 @@ idna==2.8
 psycopg2-binary==2.8.4
 pycparser==2.19
 PySocks==1.7.1
-python-telegram-bot==12.2.0
+git+git://github.com/python-telegram-bot/python-telegram-bot@4.6-update
 PyYAML==5.3
 requests==2.22.0
 six==1.13.0
