@@ -21,7 +21,7 @@ def add_flash_card(update, context, meaning, chat_id):
 
     Adds a card to the database and creates the first associated activity.
     """
-    global activities
+    activities = context.bot_data["activities"]
     flash_card = FlashCard(
         word=meaning["source"],
         translation=meaning["target"],
@@ -76,7 +76,11 @@ def get_reply_meaning(update, context):
     """
     Is called when the user has clicked on the one of the mearnings
     """
-    global cards_buffer_data
+    # logger = context.bot_data["logger"]
+    # cards_buffer = context.bot_data["cards_buffer"]
+    cards_buffer_data = context.bot_data["cards_buffer_data"]
+    # activities = context.bot_data["activities"]
+
     orig, i = parse_string(update.callback_query["data"], nokey=True)
     chat_id = update._effective_chat["id"]
     meanings = cards_buffer_data[to_string(chat_id, orig, key=None)]
@@ -88,7 +92,11 @@ def choose_flash_card(update, context):
     Is called, when the user sends the message to the bot.
     It checks if the word is unknown. Otherwise it sends a list of the possible meanings to the user.
     """
-    global cards_buffer
+    # logger = context.bot_data["logger"]
+    cards_buffer = context.bot_data["cards_buffer"]
+    cards_buffer_data = context.bot_data["cards_buffer_data"]
+    # activities = context.bot_data["activities"]
+
     chat_id = update.message.chat_id
     word = update.message.text.strip()
 
@@ -107,10 +115,11 @@ def choose_flash_card(update, context):
 
 
 @error_handler
-def add_flash_cards():
+def add_flash_cards(dp):
     """
     On the start of the bot set all the activities.
     """
+    activities = dp.bot_data["activities"]
     for record in get_all_flash_cards():
         activities.push(
             Activity(

@@ -10,18 +10,17 @@ from telegram.ext import Filters
 from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
-from .configs.config import Config
-from .database import apply_migrations
-from .database import create_database
-from .utils import Heap
-from .api.yandex_api import YandexAPI
+from bot.configs.config import Config
+from bot.database import apply_migrations
+from bot.database import create_database
+from bot.utils import Heap
+from bot.api.yandex_api import YandexAPI
 
-from .handlers.start import start
-from .handlers.add_flash_card import choose_flash_card, get_reply_meaning, add_flash_cards
-from .handlers.delete import delete_flash_card_chosen, delete_flash_card_request
-from .handlers.error import error
-from .handlers.update import set_timer
-
+from bot.handlers.start import start
+from bot.handlers.add_flash_card import choose_flash_card, get_reply_meaning, add_flash_cards
+from bot.handlers.delete import delete_flash_card_chosen, delete_flash_card_request
+from bot.handlers.error import error
+from bot.handlers.update import set_timer
 
 
 TOKEN = Config.get_config()["keys"]["telegramkey"]
@@ -59,10 +58,17 @@ def prepare():
 
     j = updater.job_queue
     set_timer(j)
-    add_flash_cards()
+
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
+
+    # set data
+    dp.bot_data["activities"] = activities
+    dp.bot_data["cards_buffer"] = cards_buffer
+    dp.bot_data["cards_buffer_data"] = cards_buffer_data
+    dp.bot_data["logger"] = logger
+    add_flash_cards(dp)
 
     # on different commands - answer in Telegram
 

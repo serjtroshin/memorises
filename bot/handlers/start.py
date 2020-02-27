@@ -10,3 +10,4 @@ def start(update, context):
         "реализовано с помощью сервиса «API «Яндекс.Словарь»"
         "(http://translate.yandex.ru,  http://api.yandex.ru/dictionary)"
     )
+    pass
