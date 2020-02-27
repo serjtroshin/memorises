@@ -34,27 +34,23 @@ class FlashCard:
         self.time_next_delta = time_next_delta
 
     def __str__(self):
-        definitions_strings = "\n".join(
-            list(map(str, list(filter(lambda x: x is not None, [self.definition]))))
-        )
+        definitions_strings = self.definition if self.definition is not None else ""
         examples_strings = (
             "Примеры:\n"
             + "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples])
-            if self.examples is not None
+            if self.examples
             else ""
         )
         synonym_strings = (
             "Синонимы:\n" + "".join([">> {}\n".format(syn) for syn in self.synonyms])
-            if self.synonyms is not None
+            if self.synonyms
             else ""
         )
         message = ""
         message += "{} | {}".format(self.word, self.translation) + "\n"
         message += definitions_strings + "\n"
-        if self.examples is not None:
-            message += examples_strings
-        if self.synonyms is not None:
-            message += synonym_strings
+        message += examples_strings
+        message += synonym_strings
         return message
 
     def add_to_database(self):
@@ -149,7 +145,7 @@ class FlashCard:
                 self.word = record.phrase
                 self.translation = record.translation
                 self.examples = FlashCard._retrieve(record.examples, "examples")
-                self.synonyms = FlashCard._retrieve(record.synonyms, "synonyms")
+                self.synonyms = list(filter(lambda s: s, FlashCard._retrieve(record.synonyms, "synonyms")))
                 self.chat_id = record.chat_id
                 self.time_added = record.time_added
                 self.time_next_delta = record.time_next_delta
@@ -168,7 +164,7 @@ class FlashCard:
                 )
                 return cur.fetchone()[0]
 
-    def chech_if_exist(self):
+    def check_if_exist(self):
         with get_connection() as conn:
             with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(
@@ -179,8 +175,9 @@ class FlashCard:
                     join {PhrasesDB.db_name}
                     on {CardsDB.db_name}.{CardsDB.phrase_id}=
                         {PhrasesDB.db_name}.{PhrasesDB.phrase_id}
-                    where {UsersDB.chat_id}=%s and {PhrasesDB.phrase}=%s and
-                    {PhrasesDB.translation}=%s
+                    where {UsersDB.chat_id}=%s and
+                    lower({PhrasesDB.phrase})=lower(%s) and
+                    lower({PhrasesDB.translation})=lower(%s)
                 """,
                     (str(self.chat_id), self.word, self.translation),
                 )
@@ -202,8 +199,8 @@ class FlashCard:
                     join {UsersDB.db_name} on {CardsDB.db_name}.{CardsDB.card_id}=
                         {UsersDB.db_name}.{UsersDB.card_id}
                     where {UsersDB.db_name}.{UsersDB.chat_id}=%s and
-                    ({PhrasesDB.db_name}.{PhrasesDB.phrase}=%s or
-                    {PhrasesDB.db_name}.{PhrasesDB.translation}=%s)
+                    (lower({PhrasesDB.db_name}.{PhrasesDB.phrase})=lower(%s) or
+                    lower({PhrasesDB.db_name}.{PhrasesDB.translation})=lower(%s))
                 """,
                     (chat_id, word, word),
                 )
@@ -219,14 +216,13 @@ class FlashCard:
                 """,
                     (card_id,),
                 )
-        with get_connection() as conn:
-            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
                 cur.execute(
                     f"""
                     delete from {CardsDB.db_name} where {CardsDB.card_id}=%s
                 """,
                     (card_id,),
                 )
+                return cur.rowcount
 
     @staticmethod
     def get_n_random(chat_id, n=5):

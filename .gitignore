@@ -4,3 +4,4 @@ __pycache__
 .idea/
 *.json
 *.yaml
+yoyo.ini

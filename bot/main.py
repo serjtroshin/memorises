@@ -21,11 +21,13 @@ from bot.handlers.add_flash_card import choose_flash_card, get_reply_meaning, ad
 from bot.handlers.delete import delete_flash_card_chosen, delete_flash_card_request
 from bot.handlers.error import error
 from bot.handlers.update import set_timer
+from bot.handlers.custom_meaning import start_setting_custom_meaning, OTHER
 
+config = Config.get_config()
 
-TOKEN = Config.get_config()["keys"]["telegramkey"]
+TOKEN = config["keys"]["telegramkey"]
 
-REQUEST_KWARGS = None  # if you want to use proxy
+REQUEST_KWARGS = config["proxy"] if "proxy" in config else None
 
 # Enable logging
 logging.basicConfig(
@@ -48,6 +50,7 @@ activities = Heap(key=lambda act: act.time)
 # on that event the chosen card is exracted from the buffer
 cards_buffer = Heap(key=lambda act: act.time)  # time -> chat_id
 cards_buffer_data = {}  # chat_id -> data
+
 
 
 def prepare():
@@ -76,13 +79,21 @@ def prepare():
 
     dp.add_handler(CommandHandler("delete", delete_flash_card_request))
 
-    dp.add_handler(MessageHandler(Filters.text, choose_flash_card))
+    
+    dp.add_handler(MessageHandler(Filters.text, choose_flash_card, pass_user_data=True))
 
     dp.add_handler(
         CallbackQueryHandler(
             get_reply_meaning, pattern=r"^ADD__.*$", pass_chat_data=True
         )
     )
+
+    dp.add_handler(
+        CallbackQueryHandler(
+            start_setting_custom_meaning, pattern=OTHER, pass_chat_data=True
+        )
+    )
+    
     dp.add_handler(
         CallbackQueryHandler(
             delete_flash_card_chosen, pattern=r"^DELETE__.*$", pass_chat_data=True
