@@ -9,6 +9,7 @@ from bot.utils import to_string, parse_string, error_handler
 from bot.timer import Activity
 from bot.configs.settings import TIME_WAIT_FOR_RESPONSE
 from bot.api.yandex_api import YandexAPI
+from bot.handlers.custom_meaning import get_custom_meaning
 
 yandexAPI = YandexAPI()
 
@@ -29,7 +30,7 @@ def add_flash_card(update, context, meaning, chat_id):
         synonyms=meaning["syns"],
         chat_id=chat_id,
     )
-    if flash_card.chech_if_exist():
+    if flash_card.check_if_exist():
         context.bot.send_message(
             chat_id,
             text=f"Вы уже добавили это слово, вот оно: \n{flash_card}",
@@ -51,6 +52,7 @@ def add_flash_card(update, context, meaning, chat_id):
         text="Новая карточка!\n" + str(flash_card),
         parse_mode=telegram.ParseMode.MARKDOWN,
     )
+    context.user_data["last_card"] = flash_card.word
 
 @error_handler
 def get_meaning(meanings, update, context):
@@ -99,6 +101,12 @@ def choose_flash_card(update, context):
 
     chat_id = update.message.chat_id
     word = update.message.text.strip()
+
+    if word.find('|') != -1:
+        context.user_data["word"], update.message.text = map(lambda s: s.strip(), word.split('|'))
+        meaning = get_custom_meaning(update, context)
+        add_flash_card(update, context, meaning, chat_id)
+        return
 
     meanings = yandexAPI.get(word)
     if len(meanings) == 0:

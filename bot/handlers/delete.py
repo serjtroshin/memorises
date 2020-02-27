@@ -17,6 +17,10 @@ def delete_flash_card_request(update, context):
     """
     chat_id = update.message.chat_id
     word = " ".join(context.args).strip()
+    if word.strip() == "":
+        if "last_card" in context.user_data:
+            word = context.user_data["last_card"]
+            del context.user_data["last_card"]
     records = FlashCard.findall_in_database(word, str(chat_id))
     keyboard = [
         [
