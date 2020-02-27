@@ -9,6 +9,7 @@ from telegram.ext import CommandHandler
 from telegram.ext import Filters
 from telegram.ext import MessageHandler
 from telegram.ext import Updater
+from telegram.ext import PollHandler
 
 from bot.configs.config import Config
 from bot.database import apply_migrations
@@ -22,6 +23,7 @@ from bot.handlers.delete import delete_flash_card_chosen, delete_flash_card_requ
 from bot.handlers.error import error
 from bot.handlers.update import set_timer
 from bot.handlers.custom_meaning import start_setting_custom_meaning, OTHER
+from bot.handlers.quiz import quiz, receive_quiz_answer, receive_poll
 
 config = Config.get_config()
 
@@ -79,7 +81,10 @@ def prepare():
 
     dp.add_handler(CommandHandler("delete", delete_flash_card_request))
 
-    
+    dp.add_handler(CommandHandler('quiz', quiz))
+    dp.add_handler(PollHandler(receive_quiz_answer))
+    dp.add_handler(MessageHandler(Filters.poll, receive_poll))
+
     dp.add_handler(MessageHandler(Filters.text, choose_flash_card, pass_user_data=True))
 
     dp.add_handler(
