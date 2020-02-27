@@ -228,6 +228,29 @@ class FlashCard:
                     (card_id,),
                 )
 
+    @staticmethod
+    def get_n_random(chat_id, n=5):
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=NamedTupleCursor) as cur:
+                cur.execute(
+                    f"""
+                select *
+                    from (
+                        select {PhrasesDB.db_name}.{PhrasesDB.phrase},
+                           {PhrasesDB.db_name}.{PhrasesDB.translation}
+                        from {CardsDB.db_name} join {PhrasesDB.db_name}
+                        on {PhrasesDB.db_name}.{PhrasesDB.phrase_id}=
+                            {CardsDB.db_name}.{CardsDB.phrase_id}
+                        join {UsersDB.db_name} on {CardsDB.db_name}.{CardsDB.card_id}=
+                            {UsersDB.db_name}.{UsersDB.card_id}
+                        where {UsersDB.db_name}.{UsersDB.chat_id}=%s
+                    ) as foo
+                    order by random() limit {n};
+                """, (chat_id,),
+                )
+                return cur.fetchall()
+
+
 
 def get_all_flash_cards():
     with get_connection() as conn:
