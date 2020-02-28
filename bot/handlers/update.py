@@ -39,7 +39,7 @@ def check_for_updates(context):
                 parse_mode=telegram.ParseMode.MARKDOWN,
             )
         except Exception as e:
-            logger.info(e)
+            logger.exception(e)
 
     while cards_buffer.top() is not None and cards_buffer.top().time < cur_time:
         k = cards_buffer.pop().data

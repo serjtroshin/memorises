@@ -111,13 +111,13 @@ class FlashCard:
     @staticmethod
     def _retrieve(ob, tp):
         if ob is None:
-            return None
+            return []
         if tp == "synonyms":
             return ob[1:-1].split(",")
         elif tp == "examples":
             ob = eval(ob)
             return {eval(i) for i in ob}
-        return None
+        return []
 
     def fill_from_database(self):
         with get_connection() as conn:
