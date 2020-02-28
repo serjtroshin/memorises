@@ -18,7 +18,11 @@ from bot.utils import Heap
 from bot.api.yandex_api import YandexAPI
 
 from bot.handlers.start import start
-from bot.handlers.add_flash_card import choose_flash_card, get_reply_meaning, add_flash_cards
+from bot.handlers.add_flash_card import (
+    choose_flash_card,
+    get_reply_meaning,
+    add_flash_cards,
+)
 from bot.handlers.delete import delete_flash_card_chosen, delete_flash_card_request
 from bot.handlers.error import error
 from bot.handlers.update import set_timer
@@ -55,7 +59,6 @@ cards_buffer = Heap(key=lambda act: act.time)  # time -> chat_id
 cards_buffer_data = {}  # chat_id -> data
 
 
-
 def prepare():
     create_database()
     apply_migrations()
@@ -64,7 +67,6 @@ def prepare():
 
     j = updater.job_queue
     set_timer(j)
-
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -82,7 +84,7 @@ def prepare():
 
     dp.add_handler(CommandHandler("delete", delete_flash_card_request))
 
-    dp.add_handler(CommandHandler('quiz', quiz))
+    dp.add_handler(CommandHandler("quiz", quiz))
     dp.add_handler(PollHandler(receive_quiz_answer))
     dp.add_handler(MessageHandler(Filters.poll, receive_poll))
 
@@ -99,7 +101,7 @@ def prepare():
             start_setting_custom_meaning, pattern=OTHER, pass_chat_data=True
         )
     )
-    
+
     dp.add_handler(
         CallbackQueryHandler(
             delete_flash_card_chosen, pattern=r"^DELETE__.*$", pass_chat_data=True
@@ -110,6 +112,7 @@ def prepare():
     dp.add_error_handler(error)
 
     return updater
+
 
 def main():
     updater = prepare()

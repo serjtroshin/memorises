@@ -54,6 +54,7 @@ def add_flash_card(update, context, meaning, chat_id):
     )
     context.user_data["last_card"] = flash_card.word
 
+
 @error_handler
 def get_meaning(meanings, update, context):
     """
@@ -64,7 +65,8 @@ def get_meaning(meanings, update, context):
     keyboard = [
         [
             InlineKeyboardButton(
-                str(meaning["target"]), callback_data=to_string(meaning["orig"], i, key="ADD")
+                str(meaning["target"]),
+                callback_data=to_string(meaning["orig"], i, key="ADD"),
             )
         ]
         for i, meaning in enumerate(meanings)
@@ -88,6 +90,7 @@ def get_reply_meaning(update, context):
     meanings = cards_buffer_data[to_string(chat_id, orig, key=None)]
     add_flash_card(update, context, meanings[int(i)], chat_id)
 
+
 @error_handler
 def choose_flash_card(update, context):
     """
@@ -102,8 +105,10 @@ def choose_flash_card(update, context):
     chat_id = update.message.chat_id
     word = update.message.text.strip()
 
-    if word.find('|') != -1:
-        context.user_data["word"], update.message.text = map(lambda s: s.strip(), word.split('|'))
+    if word.find("|") != -1:
+        context.user_data["word"], update.message.text = map(
+            lambda s: s.strip(), word.split("|")
+        )
         meaning = get_custom_meaning(update, context)
         add_flash_card(update, context, meaning, chat_id)
         return
@@ -117,7 +122,9 @@ def choose_flash_card(update, context):
     else:
         get_meaning(meanings, update=update, context=context)
         cards_buffer.push(
-            Activity(to_string(chat_id, word, key=None), time() + TIME_WAIT_FOR_RESPONSE)
+            Activity(
+                to_string(chat_id, word, key=None), time() + TIME_WAIT_FOR_RESPONSE
+            )
         )
         cards_buffer_data[to_string(chat_id, word, key=None)] = meanings
 
