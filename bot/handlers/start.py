@@ -1,6 +1,3 @@
-
-
-
 def start(update, context):
     update.message.reply_text(
         "Привет! Я твой помощник в изучении немецкого языка! "

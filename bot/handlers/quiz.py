@@ -1,7 +1,19 @@
-from telegram import (Poll, ParseMode, KeyboardButton, KeyboardButtonPollType,
-                      ReplyKeyboardMarkup, ReplyKeyboardRemove)
-from telegram.ext import (Updater, CommandHandler, PollAnswerHandler, PollHandler, MessageHandler,
-                          Filters)
+from telegram import (
+    Poll,
+    ParseMode,
+    KeyboardButton,
+    KeyboardButtonPollType,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+)
+from telegram.ext import (
+    Updater,
+    CommandHandler,
+    PollAnswerHandler,
+    PollHandler,
+    MessageHandler,
+    Filters,
+)
 from telegram.utils.helpers import mention_html
 
 from bot.configs.config import Config
@@ -10,6 +22,7 @@ from bot.flash_card import FlashCard
 
 def get_quiz(update, context):
     import random
+
     chat_id = str(update.message.chat_id)
     cards = FlashCard.get_n_random(chat_id, 5)
     idx = random.randint(0, len(cards) - 1)
@@ -18,14 +31,21 @@ def get_quiz(update, context):
 
     return question, answers, idx
 
+
 def quiz(update, context):
     question, answers, correct_option_id = get_quiz(update, context)
-    message = update.effective_message.reply_poll(question,
-                                                  answers, type=Poll.QUIZ, correct_option_id=correct_option_id)
+    message = update.effective_message.reply_poll(
+        question, answers, type=Poll.QUIZ, correct_option_id=correct_option_id
+    )
     # Save some info about the poll the bot_data for later use in receive_quiz_answer
-    pool_data = {message.poll.id: {"chat_id": update.effective_chat.id,
-                                 "message_id": message.message_id}}
+    pool_data = {
+        message.poll.id: {
+            "chat_id": update.effective_chat.id,
+            "message_id": message.message_id,
+        }
+    }
     context.bot_data.update(pool_data)
+
 
 def receive_quiz_answer(update, context):
     """Close quiz after three participants took it"""
@@ -40,6 +60,7 @@ def receive_quiz_answer(update, context):
             return
         context.bot.stop_poll(quiz_data["chat_id"], quiz_data["message_id"])
 
+
 def receive_poll(update, context):
     """On receiving polls, reply to it by a closed poll copying the received poll"""
     actual_poll = update.effective_message.poll
@@ -50,8 +71,9 @@ def receive_poll(update, context):
         options=[o.text for o in actual_poll.options],
         # with is_closed true, the poll/quiz is immediately closed
         is_closed=True,
-        reply_markup=ReplyKeyboardRemove()
+        reply_markup=ReplyKeyboardRemove(),
     )
+
 
 def main():
     # Create the Updater and pass it your bot's token.
@@ -62,7 +84,7 @@ def main():
 
     updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler('quiz', quiz))
+    dp.add_handler(CommandHandler("quiz", quiz))
     dp.add_handler(PollHandler(receive_quiz_answer))
     dp.add_handler(MessageHandler(Filters.poll, receive_poll))
 
@@ -74,5 +96,5 @@ def main():
     updater.idle()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -11,6 +11,7 @@ def set_timer(j):
     due = 5
     j.run_repeating(check_for_updates, due)
 
+
 @error_handler
 def check_for_updates(context):
     """
