@@ -10,6 +10,7 @@ from bot.timer import Activity
 from bot.configs.settings import TIME_WAIT_FOR_RESPONSE
 from bot.api.yandex_api import YandexAPI
 from bot.handlers.custom_meaning import get_custom_meaning
+from bot.handlers.custom_meaning import get_meaning
 
 yandexAPI = YandexAPI()
 
@@ -53,26 +54,6 @@ def add_flash_card(update, context, meaning, chat_id):
         parse_mode=telegram.ParseMode.MARKDOWN,
     )
     context.user_data["last_card"] = flash_card.word
-
-
-@error_handler
-def get_meaning(meanings, update, context):
-    """
-    :param meanings: a set of the different meanings of the word
-
-    Is asking a user to choose between meanings.
-    """
-    keyboard = [
-        [
-            InlineKeyboardButton(
-                str(meaning["target"]),
-                callback_data=to_string(meaning["orig"], i, key="ADD"),
-            )
-        ]
-        for i, meaning in enumerate(meanings)
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard, one_time_keyboard=True)
-    update.message.reply_text("Возможные варианты:", reply_markup=reply_markup)
 
 
 @error_handler
