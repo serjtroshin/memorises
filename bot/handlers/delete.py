@@ -22,6 +22,11 @@ def delete_flash_card_request(update, context):
             word = context.user_data["last_card"]
             del context.user_data["last_card"]
     records = FlashCard.findall_in_database(word, str(chat_id))
+
+    if not records:
+        update.message.reply_text("Не найдено карточек")
+        return
+
     keyboard = [
         [
             InlineKeyboardButton(
@@ -32,7 +37,7 @@ def delete_flash_card_request(update, context):
         for i, record in enumerate(records)
     ]
     reply_markup = InlineKeyboardMarkup(keyboard, one_time_keyboard=True)
-    update.message.reply_text("Какую карточку удалить?:", reply_markup=reply_markup)
+    update.message.reply_text("Какую карточку удалить?", reply_markup=reply_markup)
 
 
 @error_handler

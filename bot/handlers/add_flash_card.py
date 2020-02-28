@@ -59,12 +59,9 @@ def add_flash_card(update, context, meaning, chat_id):
 @error_handler
 def get_reply_meaning(update, context):
     """
-    Is called when the user has clicked on the one of the mearnings
+    Is called when the user has clicked on the one of the meanings
     """
-    # logger = context.bot_data["logger"]
-    # cards_buffer = context.bot_data["cards_buffer"]
     cards_buffer_data = context.bot_data["cards_buffer_data"]
-    # activities = context.bot_data["activities"]
 
     orig, i = parse_string(update.callback_query["data"], nokey=True)
     chat_id = update._effective_chat["id"]
@@ -78,13 +75,19 @@ def choose_flash_card(update, context):
     Is called, when the user sends the message to the bot.
     It checks if the word is unknown. Otherwise it sends a list of the possible meanings to the user.
     """
-    # logger = context.bot_data["logger"]
+    chat_id = update.message.chat_id
+
+    if "custom" in context.user_data:
+        meaning = get_custom_meaning(update, context)
+        add_flash_card(update, context, meaning, chat_id)
+        del context.user_data["custom"]
+        return
+
     cards_buffer = context.bot_data["cards_buffer"]
     cards_buffer_data = context.bot_data["cards_buffer_data"]
-    # activities = context.bot_data["activities"]
 
-    chat_id = update.message.chat_id
     word = update.message.text.strip()
+    context.user_data["word"] = word
 
     if word.find("|") != -1:
         context.user_data["word"], update.message.text = map(
@@ -95,19 +98,12 @@ def choose_flash_card(update, context):
         return
 
     meanings = yandexAPI.get(word)
-    if len(meanings) == 0:
-        update.message.reply_text(
-            "К сожалению, слово {} мне неизвестно :(".format(word)
-        )
-        return  # предложить пользователю ввести свой вариант или удалить карточку
-    else:
-        get_meaning(meanings, update=update, context=context)
-        cards_buffer.push(
-            Activity(
-                to_string(chat_id, word, key=None), time() + TIME_WAIT_FOR_RESPONSE
-            )
-        )
-        cards_buffer_data[to_string(chat_id, word, key=None)] = meanings
+
+    get_meaning(meanings, update=update, context=context)
+    cards_buffer.push(
+        Activity(to_string(chat_id, word, key=None), time() + TIME_WAIT_FOR_RESPONSE)
+    )
+    cards_buffer_data[to_string(chat_id, word, key=None)] = meanings
 
 
 @error_handler
