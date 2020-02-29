@@ -90,8 +90,15 @@ def choose_flash_card(update, context):
     context.user_data["word"] = word
 
     if word.find("|") != -1:
+        splitted_word = word.split("|")
+        if len(splitted_word) != 2:
+            context.bot.send_message(
+                chat_id,
+                text="Некорректный формат произвольной карточки, используйте:\nслово | слово",
+            )
+            return
         context.user_data["word"], update.message.text = map(
-            lambda s: s.strip(), word.split("|")
+            lambda s: s.strip(), splitted_word
         )
         meaning = get_custom_meaning(update, context)
         add_flash_card(update, context, meaning, chat_id)
@@ -101,7 +108,10 @@ def choose_flash_card(update, context):
 
     get_meaning(meanings, update=update, context=context)
     cards_buffer.push(
-        Activity(to_string(chat_id, word, key=None), datetime.utcnow().timestamp() + TIME_WAIT_FOR_RESPONSE)
+        Activity(
+            to_string(chat_id, word, key=None),
+            datetime.utcnow().timestamp() + TIME_WAIT_FOR_RESPONSE,
+        )
     )
     cards_buffer_data[to_string(chat_id, word, key=None)] = meanings
 
