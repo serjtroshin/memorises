@@ -48,7 +48,16 @@ def delete_flash_card_chosen(update, context):
     """
     card_id = int(parse_string(update.callback_query["data"], nokey=True)[0])
     chat_id = update._effective_chat["id"]
-    FlashCard.delete(card_id)
-    context.bot.send_message(
-        chat_id, text="Карточка успешно удалена", parse_mode=telegram.ParseMode.MARKDOWN
-    )
+
+    if FlashCard.delete(card_id) > 0:
+        context.bot.send_message(
+            chat_id,
+            text="Карточка успешно удалена",
+            parse_mode=telegram.ParseMode.MARKDOWN,
+        )
+    else:
+        context.bot.send_message(
+            chat_id,
+            text="Такой карточки не найдено",
+            parse_mode=telegram.ParseMode.MARKDOWN,
+        )
