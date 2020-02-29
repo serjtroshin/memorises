@@ -1,6 +1,6 @@
 import telegram
 
-from time import time
+from datetime import datetime
 
 from bot.utils import to_string, parse_string, error_handler
 from bot.flash_card import FlashCard
@@ -22,7 +22,7 @@ def check_for_updates(context):
     cards_buffer_data = context.bot_data["cards_buffer_data"]
     activities = context.bot_data["activities"]
 
-    cur_time = time()
+    cur_time = datetime.utcnow().timestamp()
     acts = []
     while activities.top() is not None and activities.top().time < cur_time:
         act = activities.pop()
