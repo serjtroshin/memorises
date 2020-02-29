@@ -2,7 +2,7 @@ import telegram
 from telegram import InlineKeyboardButton
 from telegram import InlineKeyboardMarkup
 
-from time import time
+from datetime import datetime
 
 from bot.flash_card import FlashCard, get_all_flash_cards
 from bot.utils import to_string, parse_string, error_handler
@@ -101,7 +101,7 @@ def choose_flash_card(update, context):
 
     get_meaning(meanings, update=update, context=context)
     cards_buffer.push(
-        Activity(to_string(chat_id, word, key=None), time() + TIME_WAIT_FOR_RESPONSE)
+        Activity(to_string(chat_id, word, key=None), datetime.utcnow().timestamp() + TIME_WAIT_FOR_RESPONSE)
     )
     cards_buffer_data[to_string(chat_id, word, key=None)] = meanings
 
