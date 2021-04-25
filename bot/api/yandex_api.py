@@ -10,30 +10,37 @@ class YandexAPI:
     def __init__(self, src="de", tgt="ru"):
         config = Config.get_config()
         self.keyDict = config["keys"]["YandexDictionary"]
-        self.keyTranslate = config["keys"]["YandexTranslate"]
+        self.baseHeadersTranslate = {
+            "Authorization": config["keys"]["YandexTranslate"]["authorization"]
+        }
+        self.baseDataTranslate = {
+            "folderId": config["keys"]["YandexTranslate"]["folder_id"]
+        }
+        self.hintsTranslate = [src]
 
         self.urlDict = (
             "https://dictionary.yandex.net/api/v1/dicservice.json/lookup?"
             "key={}&lang={}-{}&text="
         )
-        self.urlTranslate = (
-            "https://translate.yandex.net/api/v1.5/tr.json/translate?"
-            "key={}&lang={}-{}&text="
-        )
-        self.urlDetectLang = (
-            "https://translate.yandex.net/api/v1.5/tr.json/detect?"
-            "key={}&hint=de&text="
-        )
+        self.urlTranslate  = "https://translate.api.cloud.yandex.net/translate/v2/translate"
+        self.urlDetectLang = "https://translate.api.cloud.yandex.net/translate/v2/detect"
 
     def getDictionary(self, word, src, tgt):
         url = self.urlDict.format(self.keyDict, src, tgt) + quote(word)
         response = requests.get(url)
         return response.json()
 
-    def getTranslation(self, word, src, tgt):
-        url = self.urlTranslate.format(self.keyTranslate, src, tgt) + quote(word)
-        response = requests.get(url)
-        return response.json()
+    def getTranslation(self, word, src, tgt) -> str:
+        response = requests.post(self.urlTranslate, json={
+            **self.baseDataTranslate,
+            "sourceLanguageCode": src,
+            "targetLanguageCode": tgt,
+            "texts": [word]
+        }, headers=self.baseHeadersTranslate)
+        translations = response.json()["translations"]
+        if not translations:
+            return word
+        return translations[0]["text"]
 
     @staticmethod
     def get_article(gen):
@@ -62,9 +69,12 @@ class YandexAPI:
         return art + " " + jsn["text"]
 
     def detectLanguage(self, orig):
-        url = self.urlDetectLang.format(self.keyTranslate) + quote(orig)
-        response = requests.get(url)
-        return response.json()["lang"]
+        response = requests.post(self.urlDetectLang, json={
+            **self.baseDataTranslate,
+            "text": orig,
+            "languageCodeHints": self.hintsTranslate
+        }, headers=self.baseHeadersTranslate)
+        return response.json()["languageCode"]
 
     @staticmethod
     def is_noun(jsn):
@@ -90,13 +100,13 @@ class YandexAPI:
         defins = self.getDictionary(orig, src, tgt)["def"]
         if len(defins) == 0:  # если словарь подкачал, обращаемся к пеерводчику
             transl = self.getTranslation(orig, src, tgt)
-            if transl["text"][0] == orig:
+            if transl == orig:
                 return []
             translations.append(
                 {
                     "orig": orig,
                     "source": orig,
-                    "target": transl["text"][0],
+                    "target": transl,
                     "examples": None,
                     "syns": None,
                 }

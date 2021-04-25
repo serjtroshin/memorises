@@ -2,7 +2,9 @@
 keys:
   YandexDictionary: ""
   telegramkey: ""
-  YandexTranslate: ""
+  YandexTranslate:
+    authorization: "Api-Key ..."
+    folder_id: ""
 
 # PostgreSQL configuration
 database:
