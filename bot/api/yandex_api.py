@@ -102,6 +102,7 @@ class YandexAPI:
     def get(self, orig):
         src, tgt, reverse = self.select_lang(orig)
         translations = []
+
         dct = self.getDictionary(orig, src, tgt)
         print(dct)
         defins = []
