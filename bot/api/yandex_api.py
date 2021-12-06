@@ -1,5 +1,6 @@
 import pprint
 from urllib.parse import quote
+import warnings
 
 import requests
 
@@ -7,7 +8,7 @@ from bot.configs.config import Config
 
 
 class YandexAPI:
-    def __init__(self, src="de", tgt="ru"):
+    def __init__(self, src="ru", tgt="de"):
         config = Config.get_config()
         self.keyDict = config["keys"]["YandexDictionary"]
         self.baseHeadersTranslate = {
@@ -22,7 +23,7 @@ class YandexAPI:
             "https://dictionary.yandex.net/api/v1/dicservice.json/lookup?"
             "key={}&lang={}-{}&text="
         )
-        self.urlTranslate  = "https://translate.api.cloud.yandex.net/translate/v2/translate"
+        self.urlTranslate = "https://translate.api.cloud.yandex.net/translate/v2/translate"
         self.urlDetectLang = "https://translate.api.cloud.yandex.net/translate/v2/detect"
 
     def getDictionary(self, word, src, tgt):
@@ -74,7 +75,11 @@ class YandexAPI:
             "text": orig,
             "languageCodeHints": self.hintsTranslate
         }, headers=self.baseHeadersTranslate)
-        return response.json()["languageCode"]
+        try:
+            return response.json()["languageCode"]
+        except:
+            print(response.json())
+            return response.json()["languageCode"]
 
     @staticmethod
     def is_noun(jsn):
@@ -97,7 +102,15 @@ class YandexAPI:
     def get(self, orig):
         src, tgt, reverse = self.select_lang(orig)
         translations = []
-        defins = self.getDictionary(orig, src, tgt)["def"]
+        dct = self.getDictionary(orig, src, tgt)
+        print(dct)
+        defins = []
+        try:
+            defins = dct["def"]
+            print(defins)
+        except Exception as e:
+            warnings.warn(str(e))
+
         if len(defins) == 0:  # если словарь подкачал, обращаемся к пеерводчику
             transl = self.getTranslation(orig, src, tgt)
             if transl == orig:
