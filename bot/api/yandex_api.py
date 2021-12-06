@@ -74,7 +74,11 @@ class YandexAPI:
             "text": orig,
             "languageCodeHints": self.hintsTranslate
         }, headers=self.baseHeadersTranslate)
-        return response.json()["languageCode"]
+        try:
+            return response.json()["languageCode"]
+        except:
+            print(response.json())
+            return response.json()["languageCode"]
 
     @staticmethod
     def is_noun(jsn):
@@ -97,7 +101,11 @@ class YandexAPI:
     def get(self, orig):
         src, tgt, reverse = self.select_lang(orig)
         translations = []
-        defins = self.getDictionary(orig, src, tgt)["def"]
+        # dct = self.getDictionary(orig, src, tgt)
+        # print(dct)
+        # defins = dct["def"]
+
+        defins = []
         if len(defins) == 0:  # если словарь подкачал, обращаемся к пеерводчику
             transl = self.getTranslation(orig, src, tgt)
             if transl == orig:
