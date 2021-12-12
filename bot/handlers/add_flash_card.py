@@ -8,11 +8,11 @@ from bot.flash_card import FlashCard, get_all_flash_cards
 from bot.utils import to_string, parse_string, error_handler
 from bot.timer import Activity
 from bot.configs.settings import TIME_WAIT_FOR_RESPONSE
-from bot.api.yandex_api import YandexAPI
+from bot.api.dict_api import MetaDictionary
 from bot.handlers.custom_meaning import get_custom_meaning
 from bot.handlers.custom_meaning import get_meaning
 
-yandexAPI = YandexAPI()
+yandexAPI = MetaDictionary()
 
 
 @error_handler

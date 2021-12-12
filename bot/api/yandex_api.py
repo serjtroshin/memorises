@@ -26,10 +26,10 @@ class YandexAPI:
         self.urlTranslate = "https://translate.api.cloud.yandex.net/translate/v2/translate"
         self.urlDetectLang = "https://translate.api.cloud.yandex.net/translate/v2/detect"
 
-    def getDictionary(self, word, src, tgt):
-        url = self.urlDict.format(self.keyDict, src, tgt) + quote(word)
-        response = requests.get(url)
-        return response.json()
+    # def getDictionary(self, word, src, tgt):
+    #     url = self.urlDict.format(self.keyDict, src, tgt) + quote(word)
+    #     response = requests.get(url)
+    #     return response.json()
 
     def getTranslation(self, word, src, tgt) -> str:
         response = requests.post(self.urlTranslate, json={

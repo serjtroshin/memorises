@@ -36,8 +36,7 @@ class FlashCard:
     def __str__(self):
         definitions_strings = self.definition if self.definition is not None else ""
         examples_strings = (
-            "Примеры:\n"
-            + "".join([">> {} | {} \n".format(fr, to) for fr, to in self.examples])
+            "".join([">> {} \n".format(fr) for fr in self.examples])
             if self.examples
             else ""
         )
