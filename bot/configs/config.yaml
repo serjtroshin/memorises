@@ -1,10 +1,10 @@
 # Put API keys here
 keys:
   YandexDictionary: ""
-  telegramkey: ""
+  telegramkey: "1029523944:AAHNhk2lhttzYQg6ptTldv3Y0xGxdIK36so"
   YandexTranslate:
-    authorization: "Api-Key ..."
-    folder_id: ""
+    authorization: "Api-Key AQVNx_gXeDqn7mYexfiz9jYKXQkbcDpitE7GuB92"
+    folder_id: "b1gnulfk5aoqhimrv3ff"
 
 # PostgreSQL configuration
 database:
