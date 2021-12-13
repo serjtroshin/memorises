@@ -37,20 +37,29 @@ class NounDictionary:
                 word = word_info["lemma"]
             else:
                 word = ""
+            plural = ""
             if flexion is not None and 'nominativ singular' in flexion:
                 word = flexion['nominativ singular']
+            if flexion is not None and 'nominativ plural' in flexion:
+                plural = flexion['nominativ plural']
 
             genus = self._get_genus(word_info)
+            single_word = word
             if genus is None:
-                return word
+                single_word = word
             if genus == "m":
-                return f"der {word}"
+                single_word = f"der {word}"
             if genus == "f":
-                return f"die {word}"
+                single_word = f"die {word}"
             if genus == "n":
-                return f"das {word}"
+                single_word = f"das {word}"
             if genus == "p":
-                return f"die {word}"
+                single_word = f"die {word}"
+
+            if plural == "":
+                return single_word
+            else:
+                return f"{single_word} | die {plural}"
 
         except Exception as e:
             print(traceback.print_exc())
